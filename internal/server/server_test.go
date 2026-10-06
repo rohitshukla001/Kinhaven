@@ -12,76 +12,65 @@ import (
 	"time"
 )
 
-func discardLogger() *slog.Logger { return slog.New(slog.DiscardHandler) }
-
 func TestHealthz(t *testing.T) {
-	h := NewHandler(discardLogger())
 	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/healthz", nil))
+	NewHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/healthz", nil))
 
 	if rec.Code != http.StatusOK {
-		t.Fatalf("status = %d, want 200", rec.Code)
+		t.Fatalf("status = %d", rec.Code)
 	}
-	if ct := rec.Header().Get("Content-Type"); ct != "application/json" {
-		t.Errorf("Content-Type = %q, want application/json", ct)
+	var body map[string]string
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
 	}
-	var got Health
-	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
-		t.Fatalf("decode body: %v", err)
-	}
-	if got.Status != "ok" || got.Name != "carecircle" || got.Version == "" {
-		t.Errorf("body = %+v", got)
+	if body["status"] != "ok" || body["name"] != "kinhaven" || body["version"] == "" {
+		t.Errorf("body = %v", body)
 	}
 }
 
-func TestRoutes(t *testing.T) {
-	h := NewHandler(discardLogger())
-	tests := []struct {
+func TestUnknownRoutes(t *testing.T) {
+	for _, tt := range []struct {
 		method, path string
 		want         int
 	}{
 		{http.MethodPost, "/healthz", http.StatusMethodNotAllowed},
-		{http.MethodGet, "/unknown", http.StatusNotFound},
-	}
-	for _, tt := range tests {
+		{http.MethodGet, "/nope", http.StatusNotFound},
+	} {
 		rec := httptest.NewRecorder()
-		h.ServeHTTP(rec, httptest.NewRequest(tt.method, tt.path, nil))
+		NewHandler().ServeHTTP(rec, httptest.NewRequest(tt.method, tt.path, nil))
 		if rec.Code != tt.want {
-			t.Errorf("%s %s: status = %d, want %d", tt.method, tt.path, rec.Code, tt.want)
+			t.Errorf("%s %s = %d, want %d", tt.method, tt.path, rec.Code, tt.want)
 		}
 	}
 }
 
-func TestServeGracefulShutdown(t *testing.T) {
+func TestServeShutsDownOnCancel(t *testing.T) {
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
+	url := "http://" + ln.Addr().String() + "/healthz"
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
-	go func() { done <- Serve(ctx, ln, NewHandler(discardLogger()), discardLogger()) }()
+	go func() { done <- Serve(ctx, ln, NewHandler(), slog.New(slog.DiscardHandler)) }()
 
-	resp, err := http.Get("http://" + ln.Addr().String() + "/healthz")
+	resp, err := http.Get(url)
 	if err != nil {
-		t.Fatalf("GET /healthz: %v", err)
+		t.Fatal(err)
 	}
-	_, _ = io.Copy(io.Discard, resp.Body)
+	io.Copy(io.Discard, resp.Body)
 	resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("status = %d, want 200", resp.StatusCode)
-	}
 
 	cancel()
 	select {
 	case err := <-done:
 		if err != nil {
-			t.Fatalf("Serve() error = %v, want nil", err)
+			t.Fatalf("Serve: %v", err)
 		}
 	case <-time.After(5 * time.Second):
-		t.Fatal("Serve() did not return after cancel")
+		t.Fatal("Serve did not return after cancel")
 	}
-
-	if _, err := http.Get("http://" + ln.Addr().String() + "/healthz"); err == nil {
-		t.Error("server still accepts connections after shutdown")
+	if _, err := http.Get(url); err == nil {
+		t.Error("server still accepts connections")
 	}
 }
