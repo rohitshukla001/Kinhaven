@@ -27,10 +27,8 @@ func (r Recipient) Validate() error {
 	if r.Timezone == "" {
 		return invalid("recipient timezone is required")
 	}
-	if _, err := time.LoadLocation(r.Timezone); err != nil {
-		return invalid("unknown timezone %q", r.Timezone)
-	}
-	return nil
+	_, err := r.Location()
+	return err
 }
 
 var e164 = regexp.MustCompile(`^\+[1-9][0-9]{6,14}$`)

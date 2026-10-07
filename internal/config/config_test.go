@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 )
 
 func envFrom(m map[string]string) func(string) string {
@@ -23,8 +24,8 @@ func TestLoadDefaults(t *testing.T) {
 	if want := []string{"http://localhost:8090", "http://127.0.0.1:8090"}; !slices.Equal(cfg.AllowedOrigins, want) {
 		t.Errorf("AllowedOrigins = %v, want %v", cfg.AllowedOrigins, want)
 	}
-	if cfg.Location.String() != "UTC" || cfg.LogLevel != slog.LevelInfo {
-		t.Errorf("got Location=%v LogLevel=%v", cfg.Location, cfg.LogLevel)
+	if cfg.Location.String() != "UTC" || cfg.LogLevel != slog.LevelInfo || cfg.MissedDoseGrace != time.Hour {
+		t.Errorf("got Location=%v LogLevel=%v MissedDoseGrace=%v", cfg.Location, cfg.LogLevel, cfg.MissedDoseGrace)
 	}
 }
 
@@ -35,6 +36,7 @@ func TestLoadOverrides(t *testing.T) {
 		"KINHAVEN_ALLOWED_ORIGINS":   " https://Demo.Example.com , http://localhost:3000/ ",
 		"KINHAVEN_TIMEZONE":          "Asia/Kolkata",
 		"KINHAVEN_LOG_LEVEL":         "debug",
+		"KINHAVEN_MISSED_DOSE_GRACE": "45m",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -43,8 +45,8 @@ func TestLoadOverrides(t *testing.T) {
 	if want := []string{"https://demo.example.com", "http://localhost:3000"}; !slices.Equal(cfg.AllowedOrigins, want) {
 		t.Errorf("AllowedOrigins = %v, want %v", cfg.AllowedOrigins, want)
 	}
-	if cfg.Location.String() != "Asia/Kolkata" || cfg.LogLevel != slog.LevelDebug {
-		t.Errorf("got Location=%v LogLevel=%v", cfg.Location, cfg.LogLevel)
+	if cfg.Location.String() != "Asia/Kolkata" || cfg.LogLevel != slog.LevelDebug || cfg.MissedDoseGrace != 45*time.Minute {
+		t.Errorf("got Location=%v LogLevel=%v MissedDoseGrace=%v", cfg.Location, cfg.LogLevel, cfg.MissedDoseGrace)
 	}
 }
 
@@ -69,6 +71,8 @@ func TestLoadRejects(t *testing.T) {
 		{"KINHAVEN_ALLOWED_ORIGINS", " , ", "no origins"},
 		{"KINHAVEN_TIMEZONE", "Mars/Olympus", "unknown time zone"},
 		{"KINHAVEN_LOG_LEVEL", "loud", "KINHAVEN_LOG_LEVEL"},
+		{"KINHAVEN_MISSED_DOSE_GRACE", "soon", "positive duration"},
+		{"KINHAVEN_MISSED_DOSE_GRACE", "-5m", "positive duration"},
 	}
 	for _, tt := range tests {
 		_, err := Load(envFrom(map[string]string{tt.key: tt.value}))

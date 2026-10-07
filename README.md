@@ -21,6 +21,9 @@ Kinhaven is an entry in the Alexa+ track of the
 
 - Care records for each person: medicines with daily or weekly dose times,
   dose events (taken or skipped), daily check-ins and family contacts.
+- Daily dose schedule in each person's own timezone. Each dose is upcoming,
+  due, taken, skipped or missed. Weekly medicines and daylight-saving changes
+  are supported.
 - Local JSON data file with private permissions (`0600`) and atomic writes.
 - Configuration from environment variables, with all errors shown together at startup.
 - Loopback-only listen address by default, as the MCP specification recommends.
@@ -79,6 +82,7 @@ Do not put secrets in `.env.example`.
 | `KINHAVEN_DATA_DIR` | `./data` | Directory for the data file. The file contains health data, so keep the directory private. |
 | `KINHAVEN_ALLOWED_ORIGINS` | `http://localhost:8090,http://127.0.0.1:8090` | Browser origins that can call the MCP endpoint. |
 | `KINHAVEN_TIMEZONE` | `UTC` | Default IANA timezone for care schedules. |
+| `KINHAVEN_MISSED_DOSE_GRACE` | `1h` | Time after a scheduled dose before the dose counts as missed. Use a Go duration, for example `45m`. |
 | `KINHAVEN_LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error`. |
 
 ## Running and testing
@@ -96,7 +100,7 @@ Do not put secrets in `.env.example`.
 
 ```text
 cmd/kinhaven-server/     Server entry point
-internal/care/           Care data types and their validation rules
+internal/care/           Care data types, validation rules and the dose schedule
 internal/config/         Loads and validates configuration
 internal/server/         HTTP handler and server lifecycle
 internal/store/          Saves care data to a JSON file
