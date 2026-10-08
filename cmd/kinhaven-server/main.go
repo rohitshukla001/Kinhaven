@@ -8,10 +8,14 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
+	"time"
 
 	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/config"
+	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/mcpserver"
 	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/server"
+	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/store"
 )
 
 func main() {
@@ -31,9 +35,15 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 	}
 	logger := slog.New(slog.NewTextHandler(logOut, &slog.HandlerOptions{Level: cfg.LogLevel}))
 
+	st, err := store.Open(filepath.Join(cfg.DataDir, "kinhaven.json"))
+	if err != nil {
+		return err
+	}
+	mcpHandler := mcpserver.Handler(mcpserver.New(st, cfg.MissedDoseGrace, time.Now), logger)
+
 	ln, err := net.Listen("tcp", cfg.Addr)
 	if err != nil {
 		return err
 	}
-	return server.Serve(ctx, ln, server.NewHandler(), logger)
+	return server.Serve(ctx, ln, server.NewHandler(mcpHandler, cfg.AllowedOrigins), logger)
 }

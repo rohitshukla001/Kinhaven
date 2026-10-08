@@ -1,0 +1,62 @@
+package mcpserver
+
+import (
+	"log/slog"
+	"net/http"
+	"time"
+
+	"github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/store"
+	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/version"
+)
+
+const instructions = `Kinhaven helps a family look after an elderly person: their medicines, the doses they take and how they feel each day.
+All times are in the cared-for person's own timezone.
+When more than one person is cared for, call list_people first and pass recipient_id to the other tools.`
+
+type tools struct {
+	store *store.Store
+	grace time.Duration
+	now   func() time.Time
+}
+
+func New(st *store.Store, grace time.Duration, now func() time.Time) *mcp.Server {
+	s := mcp.NewServer(&mcp.Implementation{
+		Name:    version.Name,
+		Title:   "Kinhaven",
+		Version: version.Version,
+	}, &mcp.ServerOptions{Instructions: instructions})
+
+	t := &tools{store: st, grace: grace, now: now}
+	closedWorld := false
+	readOnly := &mcp.ToolAnnotations{ReadOnlyHint: true, IdempotentHint: true, OpenWorldHint: &closedWorld}
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "list_people",
+		Title:       "List people",
+		Description: "List the people whose care Kinhaven tracks, with their IDs and timezones.",
+		Annotations: readOnly,
+	}, t.listPeople)
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "list_medications",
+		Title:       "List medications",
+		Description: "List a person's medicines with dosage, instructions, daily dose times and, for weekly medicines, the days they are taken.",
+		Annotations: readOnly,
+	}, t.listMedications)
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "get_schedule",
+		Title:       "Get dose schedule",
+		Description: "Show every dose for one day with its status: upcoming, due, taken, skipped or missed. Use it to answer questions such as \"Has Mom taken her morning tablets?\".",
+		Annotations: readOnly,
+	}, t.getSchedule)
+
+	return s
+}
+
+func Handler(s *mcp.Server, logger *slog.Logger) http.Handler {
+	return mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return s }, &mcp.StreamableHTTPOptions{
+		Stateless: true,
+		Logger:    logger,
+	})
+}

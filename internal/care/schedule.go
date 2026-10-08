@@ -29,8 +29,13 @@ type Schedule struct {
 }
 
 func (s Schedule) Day(meds []Medication, doses []DoseEvent, day, now time.Time) []Slot {
-	start := startOfDay(day.In(s.Location))
-	return s.Slots(meds, doses, start, start.AddDate(0, 0, 1), now)
+	start, end := DayBounds(day, s.Location)
+	return s.Slots(meds, doses, start, end, now)
+}
+
+func DayBounds(t time.Time, loc *time.Location) (start, end time.Time) {
+	start = startOfDay(t.In(loc))
+	return start, start.AddDate(0, 0, 1)
 }
 
 func (s Schedule) Slots(meds []Medication, doses []DoseEvent, from, to, now time.Time) []Slot {

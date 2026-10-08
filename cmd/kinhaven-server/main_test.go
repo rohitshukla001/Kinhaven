@@ -22,9 +22,13 @@ func TestRunRejectsBadConfig(t *testing.T) {
 }
 
 func TestRunStopsWhenContextEnds(t *testing.T) {
+	dataDir := t.TempDir()
 	getenv := func(k string) string {
-		if k == "KINHAVEN_ADDR" {
+		switch k {
+		case "KINHAVEN_ADDR":
 			return "127.0.0.1:0"
+		case "KINHAVEN_DATA_DIR":
+			return dataDir
 		}
 		return ""
 	}

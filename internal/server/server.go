@@ -5,9 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net"
 	"net/http"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/version"
@@ -15,10 +18,24 @@ import (
 
 const shutdownGrace = 10 * time.Second
 
-func NewHandler() http.Handler {
+func NewHandler(mcp http.Handler, allowedOrigins []string) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", healthz)
+	mux.Handle("/mcp", checkOrigin(allowedOrigins, mcp))
 	return mux
+}
+
+func checkOrigin(allowed []string, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+		if origin != "" && !slices.Contains(allowed, strings.ToLower(origin)) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			io.WriteString(w, `{"jsonrpc":"2.0","error":{"code":-32600,"message":"origin not allowed"}}`)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 func healthz(w http.ResponseWriter, _ *http.Request) {

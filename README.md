@@ -25,6 +25,10 @@ Kinhaven is an entry in the Alexa+ track of the
   due, taken, skipped or missed. Weekly medicines and daylight-saving changes
   are supported.
 - Local JSON data file with private permissions (`0600`) and atomic writes.
+- MCP endpoint at `/mcp` on the Streamable HTTP transport. It accepts
+  protocol version 2025-11-25 and later and runs stateless, so any request
+  can go to any server instance.
+- Origin checks and DNS-rebinding protection on the MCP endpoint.
 - Configuration from environment variables, with all errors shown together at startup.
 - Loopback-only listen address by default, as the MCP specification recommends.
 - Health endpoint at `GET /healthz`.
@@ -70,6 +74,26 @@ curl http://127.0.0.1:8080/healthz
 
 The server sends `{"status":"ok","name":"kinhaven","version":"dev"}`.
 
+## Using the MCP server
+
+Start the server, then connect any MCP client to `http://127.0.0.1:8080/mcp`.
+
+| Tool | Purpose |
+|---|---|
+| `list_people` | Lists the people in care, with their IDs and timezones. |
+| `list_medications` | Lists a person's medicines, dose times and weekly days. |
+| `get_schedule` | Shows each dose for one day with its status: `upcoming`, `due`, `taken`, `skipped` or `missed`. |
+
+The `recipient_id` argument is optional when only one person is in care.
+
+To try the tools in a browser, use the MCP Inspector:
+
+```sh
+npx @modelcontextprotocol/inspector
+```
+
+Select the **Streamable HTTP** transport and enter `http://127.0.0.1:8080/mcp`.
+
 ## Configuration
 
 The server reads these environment variables. All of them are optional.
@@ -102,6 +126,7 @@ Do not put secrets in `.env.example`.
 cmd/kinhaven-server/     Server entry point
 internal/care/           Care data types, validation rules and the dose schedule
 internal/config/         Loads and validates configuration
+internal/mcpserver/      MCP server and its tools
 internal/server/         HTTP handler and server lifecycle
 internal/store/          Saves care data to a JSON file
 internal/version/        Build metadata
@@ -115,11 +140,16 @@ internal/version/        Build metadata
 | `address already in use` | Another process uses the port. Set a different port in `KINHAVEN_ADDR`. |
 | `unknown IANA timezone` | Use a name from the IANA database, for example `Asia/Kolkata`. |
 | `go.mod requires go >= 1.25.0` | Install Go 1.25 or later. |
+| MCP request fails with `403` and `origin not allowed` | Add the page origin to `KINHAVEN_ALLOWED_ORIGINS`. |
+| MCP request fails with `400 Unsupported protocol version` | Use a client that supports MCP protocol version 2025-11-25 or later. |
+| Tool returns `more than one person is cared for` | Call `list_people`, then pass `recipient_id`. |
 
 ## Related documentation
 
 - [MCP specification 2025-11-25](https://modelcontextprotocol.io/specification/2025-11-25)
 - [MCP Streamable HTTP transport](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports#streamable-http)
+- [MCP Go SDK](https://github.com/modelcontextprotocol/go-sdk)
+- [MCP Inspector](https://github.com/modelcontextprotocol/inspector)
 
 ## License
 
