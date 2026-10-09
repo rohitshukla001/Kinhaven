@@ -44,7 +44,7 @@ func newFixture(t *testing.T) *fixture {
 	}
 	f.now = f.day.Add(10 * time.Hour)
 
-	h := server.NewHandler(Handler(New(st, time.Hour, func() time.Time { return f.now }), nil), []string{"http://localhost:8090"})
+	h := server.NewHandler(Handler(New(st, Config{Grace: time.Hour, Location: loc, Now: func() time.Time { return f.now }}), nil), []string{"http://localhost:8090"})
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
 	f.url = srv.URL + "/mcp"
@@ -142,16 +142,21 @@ func TestHandshakeAndToolList(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		var names []string
+		var readOnly, writes []string
 		for _, tool := range res.Tools {
-			names = append(names, tool.Name)
-			if tool.Annotations == nil || !tool.Annotations.ReadOnlyHint {
-				t.Errorf("%s is not marked read-only", tool.Name)
+			if tool.Annotations != nil && tool.Annotations.ReadOnlyHint {
+				readOnly = append(readOnly, tool.Name)
+			} else {
+				writes = append(writes, tool.Name)
 			}
 		}
-		slices.Sort(names)
-		if want := []string{"get_schedule", "list_medications", "list_people"}; !slices.Equal(names, want) {
-			t.Errorf("tools = %v, want %v", names, want)
+		slices.Sort(readOnly)
+		slices.Sort(writes)
+		if want := []string{"get_adherence_summary", "get_schedule", "list_medications", "list_people"}; !slices.Equal(readOnly, want) {
+			t.Errorf("read-only tools = %v, want %v", readOnly, want)
+		}
+		if want := []string{"add_contact", "add_medication", "add_person", "log_dose", "record_checkin", "stop_medication"}; !slices.Equal(writes, want) {
+			t.Errorf("write tools = %v, want %v", writes, want)
 		}
 	}
 }

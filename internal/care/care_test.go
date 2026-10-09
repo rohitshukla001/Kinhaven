@@ -88,3 +88,16 @@ func TestValidate(t *testing.T) {
 		}
 	}
 }
+
+func TestParseWeekday(t *testing.T) {
+	for in, want := range map[string]time.Weekday{"sunday": time.Sunday, "Mon": time.Monday, " SATURDAY ": time.Saturday} {
+		if got, err := ParseWeekday(in); err != nil || got != want {
+			t.Errorf("ParseWeekday(%q) = %v, %v", in, got, err)
+		}
+	}
+	for _, bad := range []string{"", "su", "funday"} {
+		if _, err := ParseWeekday(bad); !errors.Is(err, ErrInvalid) {
+			t.Errorf("ParseWeekday(%q) err = %v", bad, err)
+		}
+	}
+}

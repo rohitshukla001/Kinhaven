@@ -60,22 +60,27 @@ func (t *tools) listMedications(_ context.Context, _ *mcp.CallToolRequest, in li
 		if m.Stopped && !in.IncludeStopped {
 			continue
 		}
-		med := medication{
-			ID:           m.ID,
-			Name:         m.Name,
-			Dosage:       m.Dosage,
-			Instructions: m.Instructions,
-			Stopped:      m.Stopped,
-		}
-		for _, c := range m.Times {
-			med.Times = append(med.Times, c.String())
-		}
-		for _, d := range m.Days {
-			med.Days = append(med.Days, strings.ToLower(d.String()))
-		}
-		out.Medications = append(out.Medications, med)
+		out.Medications = append(out.Medications, toMedication(m))
 	}
 	return nil, out, nil
+}
+
+func toMedication(m care.Medication) medication {
+	med := medication{
+		ID:           m.ID,
+		Name:         m.Name,
+		Dosage:       m.Dosage,
+		Instructions: m.Instructions,
+		Times:        make([]string, len(m.Times)),
+		Stopped:      m.Stopped,
+	}
+	for i, c := range m.Times {
+		med.Times[i] = c.String()
+	}
+	for _, d := range m.Days {
+		med.Days = append(med.Days, strings.ToLower(d.String()))
+	}
+	return med
 }
 
 type getScheduleInput struct {
@@ -122,7 +127,7 @@ func (t *tools) getSchedule(_ context.Context, _ *mcp.CallToolRequest, in getSch
 		return nil, getScheduleOutput{}, err
 	}
 
-	now := t.now()
+	now := t.cfg.Now()
 	day := now
 	if in.Date != "" {
 		if day, err = time.ParseInLocation(time.DateOnly, in.Date, loc); err != nil {
@@ -130,7 +135,7 @@ func (t *tools) getSchedule(_ context.Context, _ *mcp.CallToolRequest, in getSch
 		}
 	}
 	start, end := care.DayBounds(day, loc)
-	sched := care.Schedule{Location: loc, Grace: t.grace}
+	sched := care.Schedule{Location: loc, Grace: t.cfg.Grace}
 	slots := sched.Day(t.store.Medications(r.ID), t.store.Doses(r.ID, start, end), start, now)
 
 	out := getScheduleOutput{

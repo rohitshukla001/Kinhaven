@@ -39,7 +39,11 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 	if err != nil {
 		return err
 	}
-	mcpHandler := mcpserver.Handler(mcpserver.New(st, cfg.MissedDoseGrace, time.Now), logger)
+	mcpHandler := mcpserver.Handler(mcpserver.New(st, mcpserver.Config{
+		Grace:    cfg.MissedDoseGrace,
+		Location: cfg.Location,
+		Now:      time.Now,
+	}), logger)
 
 	ln, err := net.Listen("tcp", cfg.Addr)
 	if err != nil {

@@ -2,6 +2,7 @@ package care
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -32,4 +33,15 @@ func (c *ClockTime) UnmarshalText(b []byte) error {
 	}
 	*c = parsed
 	return nil
+}
+
+func ParseWeekday(s string) (time.Weekday, error) {
+	s = strings.ToLower(strings.TrimSpace(s))
+	for d := time.Sunday; d <= time.Saturday; d++ {
+		name := strings.ToLower(d.String())
+		if s == name || s == name[:3] {
+			return d, nil
+		}
+	}
+	return 0, invalid("%q is not a day of the week", s)
 }
