@@ -18,6 +18,8 @@ type Config struct {
 	AllowedOrigins  []string
 	Location        *time.Location
 	MissedDoseGrace time.Duration
+	Alerts          string
+	AlertInterval   time.Duration
 	LogLevel        slog.Level
 }
 
@@ -50,6 +52,14 @@ func Load(getenv func(string) string) (Config, error) {
 	}
 	if cfg.MissedDoseGrace, err = time.ParseDuration(get("KINHAVEN_MISSED_DOSE_GRACE", "1h")); err != nil || cfg.MissedDoseGrace <= 0 {
 		errs = append(errs, errors.New("KINHAVEN_MISSED_DOSE_GRACE: want a positive duration such as 45m or 1h"))
+	}
+	switch cfg.Alerts = strings.ToLower(get("KINHAVEN_ALERTS", "log")); cfg.Alerts {
+	case "off", "log", "sns":
+	default:
+		errs = append(errs, errors.New("KINHAVEN_ALERTS: want off, log or sns"))
+	}
+	if cfg.AlertInterval, err = time.ParseDuration(get("KINHAVEN_ALERT_INTERVAL", "1m")); err != nil || cfg.AlertInterval < time.Second {
+		errs = append(errs, errors.New("KINHAVEN_ALERT_INTERVAL: want a duration of at least 1s, such as 30s or 1m"))
 	}
 	if err := cfg.LogLevel.UnmarshalText([]byte(get("KINHAVEN_LOG_LEVEL", "info"))); err != nil {
 		errs = append(errs, fmt.Errorf("KINHAVEN_LOG_LEVEL: %w", err))

@@ -147,3 +147,12 @@ func (c CheckIn) Validate() error {
 	}
 	return invalid("mood must be %q, %q or %q", MoodGood, MoodOkay, MoodPoor)
 }
+
+type Alert struct {
+	ID           string    `json:"id"`
+	RecipientID  string    `json:"recipient_id"`
+	MedicationID string    `json:"medication_id"`
+	Slot         time.Time `json:"slot"`
+	ContactID    string    `json:"contact_id"`
+	SentAt       time.Time `json:"sent_at"`
+}

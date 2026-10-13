@@ -265,3 +265,27 @@ func TestConcurrentWrites(t *testing.T) {
 		t.Errorf("check-ins after reopen = %d, want %d", len(got), n)
 	}
 }
+
+func TestAlertsSurviveReopen(t *testing.T) {
+	s, path := openTemp(t)
+	r, m := seed(t, s)
+	alerts := []care.Alert{
+		{RecipientID: r.ID, MedicationID: m.ID, Slot: slot, ContactID: "con_a", SentAt: slot.Add(time.Hour)},
+		{RecipientID: r.ID, MedicationID: m.ID, Slot: slot.Add(12 * time.Hour), ContactID: "con_a", SentAt: slot.Add(13 * time.Hour)},
+	}
+	if err := s.RecordAlerts(alerts); err != nil {
+		t.Fatal(err)
+	}
+
+	reopened, err := Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := reopened.Alerts(r.ID, slot, slot.Add(time.Hour))
+	if len(got) != 1 || got[0].ContactID != "con_a" || got[0].ID == "" || !got[0].SentAt.Equal(slot.Add(time.Hour)) {
+		t.Errorf("alerts = %+v", got)
+	}
+	if got := reopened.Alerts("rcp_other", slot, slot.Add(24*time.Hour)); len(got) != 0 {
+		t.Errorf("alerts for another recipient = %+v", got)
+	}
+}

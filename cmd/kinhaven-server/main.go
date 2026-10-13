@@ -9,9 +9,11 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"sync"
 	"syscall"
 	"time"
 
+	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/alert"
 	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/config"
 	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/mcpserver"
 	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/server"
@@ -45,9 +47,36 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 		Now:      time.Now,
 	}), logger)
 
+	sender, err := newSender(ctx, cfg.Alerts, logger)
+	if err != nil {
+		return err
+	}
+
 	ln, err := net.Listen("tcp", cfg.Addr)
 	if err != nil {
 		return err
 	}
-	return server.Serve(ctx, ln, server.NewHandler(mcpHandler, cfg.AllowedOrigins), logger)
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	var wg sync.WaitGroup
+	if sender != nil {
+		watcher := &alert.Watcher{Store: st, Sender: sender, Grace: cfg.MissedDoseGrace, Now: time.Now, Logger: logger}
+		wg.Go(func() { watcher.Run(ctx, cfg.AlertInterval) })
+	}
+
+	err = server.Serve(ctx, ln, server.NewHandler(mcpHandler, cfg.AllowedOrigins), logger)
+	cancel()
+	wg.Wait()
+	return err
+}
+
+func newSender(ctx context.Context, mode string, logger *slog.Logger) (alert.Sender, error) {
+	switch mode {
+	case "sns":
+		return alert.NewSNSSender(ctx)
+	case "log":
+		return alert.LogSender{Logger: logger}, nil
+	}
+	return nil, nil
 }

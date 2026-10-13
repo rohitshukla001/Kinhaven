@@ -24,6 +24,7 @@ type snapshot struct {
 	Medications []care.Medication `json:"medications"`
 	Doses       []care.DoseEvent  `json:"doses"`
 	CheckIns    []care.CheckIn    `json:"check_ins"`
+	Alerts      []care.Alert      `json:"alerts"`
 }
 
 func (s snapshot) clone() snapshot {
@@ -33,6 +34,7 @@ func (s snapshot) clone() snapshot {
 		Medications: slices.Clone(s.Medications),
 		Doses:       slices.Clone(s.Doses),
 		CheckIns:    slices.Clone(s.CheckIns),
+		Alerts:      slices.Clone(s.Alerts),
 	}
 }
 
@@ -308,6 +310,28 @@ func (s *Store) CheckIns(recipientID string, from, to time.Time) []care.CheckIn 
 	for _, c := range s.data.CheckIns {
 		if c.RecipientID == recipientID && within(c.At, from, to) {
 			out = append(out, c)
+		}
+	}
+	return out
+}
+
+func (s *Store) RecordAlerts(alerts []care.Alert) error {
+	for i := range alerts {
+		alerts[i].ID = newID("alr")
+	}
+	return s.update(func(d *snapshot) error {
+		d.Alerts = append(d.Alerts, alerts...)
+		return nil
+	})
+}
+
+func (s *Store) Alerts(recipientID string, from, to time.Time) []care.Alert {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	var out []care.Alert
+	for _, a := range s.data.Alerts {
+		if a.RecipientID == recipientID && within(a.Slot, from, to) {
+			out = append(out, a)
 		}
 	}
 	return out

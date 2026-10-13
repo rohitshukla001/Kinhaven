@@ -89,15 +89,16 @@ type getScheduleInput struct {
 }
 
 type dose struct {
-	MedicationID string `json:"medication_id"`
-	Medication   string `json:"medication"`
-	Dosage       string `json:"dosage,omitempty"`
-	Instructions string `json:"instructions,omitempty"`
-	Time         string `json:"time"`
-	ScheduledAt  string `json:"scheduled_at"`
-	Status       string `json:"status"`
-	RecordedAt   string `json:"recorded_at,omitempty"`
-	Note         string `json:"note,omitempty"`
+	MedicationID    string `json:"medication_id"`
+	Medication      string `json:"medication"`
+	Dosage          string `json:"dosage,omitempty"`
+	Instructions    string `json:"instructions,omitempty"`
+	Time            string `json:"time"`
+	ScheduledAt     string `json:"scheduled_at"`
+	Status          string `json:"status"`
+	RecordedAt      string `json:"recorded_at,omitempty"`
+	Note            string `json:"note,omitempty"`
+	FamilyAlertedAt string `json:"family_alerted_at,omitempty"`
 }
 
 type scheduleSummary struct {
@@ -145,6 +146,17 @@ func (t *tools) getSchedule(_ context.Context, _ *mcp.CallToolRequest, in getSch
 		Timezone:    r.Timezone,
 		Doses:       make([]dose, 0, len(slots)),
 	}
+	type slotKey struct {
+		medicationID string
+		unix         int64
+	}
+	alerted := map[slotKey]time.Time{}
+	for _, a := range t.store.Alerts(r.ID, start, end) {
+		key := slotKey{a.MedicationID, a.Slot.Unix()}
+		if first, ok := alerted[key]; !ok || a.SentAt.Before(first) {
+			alerted[key] = a.SentAt
+		}
+	}
 	for _, s := range slots {
 		d := dose{
 			MedicationID: s.Medication.ID,
@@ -158,6 +170,9 @@ func (t *tools) getSchedule(_ context.Context, _ *mcp.CallToolRequest, in getSch
 		if s.Dose != nil {
 			d.RecordedAt = s.Dose.RecordedAt.In(loc).Format(time.RFC3339)
 			d.Note = s.Dose.Note
+		}
+		if at, ok := alerted[slotKey{s.Medication.ID, s.At.Unix()}]; ok {
+			d.FamilyAlertedAt = at.In(loc).Format(time.RFC3339)
 		}
 		out.Doses = append(out.Doses, d)
 		out.Summary.add(s.Status)

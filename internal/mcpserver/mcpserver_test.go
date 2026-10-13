@@ -165,9 +165,14 @@ func TestGetSchedule(t *testing.T) {
 	f := newFixture(t)
 	r := f.addPerson(t, "Kamala")
 	metformin := f.addMedication(t, care.Medication{RecipientID: r.ID, Name: "Metformin", Dosage: "500 mg", Instructions: "after food", Times: clocks(t, "08:00", "20:30")})
-	f.addMedication(t, care.Medication{RecipientID: r.ID, Name: "Thyroxine", Times: clocks(t, "07:00")})
+	thyroxine := f.addMedication(t, care.Medication{RecipientID: r.ID, Name: "Thyroxine", Times: clocks(t, "07:00")})
 	f.addMedication(t, care.Medication{RecipientID: r.ID, Name: "Amlodipine", Times: clocks(t, "09:30")})
 	if _, err := f.store.RecordDose(care.DoseEvent{MedicationID: metformin.ID, Slot: f.day.Add(8 * time.Hour), Status: care.DoseTaken, RecordedAt: f.day.Add(8*time.Hour + 5*time.Minute)}); err != nil {
+		t.Fatal(err)
+	}
+
+	alertAt := f.day.Add(8*time.Hour + 2*time.Minute)
+	if err := f.store.RecordAlerts([]care.Alert{{RecipientID: r.ID, MedicationID: thyroxine.ID, Slot: f.day.Add(7 * time.Hour).UTC(), ContactID: "con_ravi", SentAt: alertAt}}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -177,6 +182,9 @@ func TestGetSchedule(t *testing.T) {
 		t.Fatal(errorText(res))
 	}
 
+	if out.Doses[0].FamilyAlertedAt != alertAt.Format(time.RFC3339) || out.Doses[1].FamilyAlertedAt != "" {
+		t.Errorf("family alerts = %q, %q", out.Doses[0].FamilyAlertedAt, out.Doses[1].FamilyAlertedAt)
+	}
 	if out.Name != "Kamala" || out.Date != f.day.Format(time.DateOnly) || out.Timezone != "Asia/Kolkata" {
 		t.Errorf("header = %s %s %s", out.Name, out.Date, out.Timezone)
 	}
