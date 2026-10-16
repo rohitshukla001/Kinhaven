@@ -177,7 +177,8 @@ func (t *tools) getSchedule(_ context.Context, _ *mcp.CallToolRequest, in getSch
 		out.Doses = append(out.Doses, d)
 		out.Summary.add(s.Status)
 	}
-	return nil, out, nil
+	res, err := spoken(scheduleSpeech(out, start), out)
+	return res, out, err
 }
 
 func (s *scheduleSummary) add(status care.SlotStatus) {

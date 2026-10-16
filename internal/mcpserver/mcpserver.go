@@ -53,6 +53,7 @@ func New(st *store.Store, cfg Config) *mcp.Server {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "get_schedule",
 		Title:       "Get dose schedule",
+		Meta:        cardMeta,
 		Description: "Show every dose for one day with its status (upcoming, due, taken, skipped or missed) and when the family got an SMS about a missed dose. Use it to answer questions such as \"Has Mom taken her morning tablets?\".",
 		Annotations: readOnly,
 	}, t.getSchedule)
@@ -60,6 +61,7 @@ func New(st *store.Store, cfg Config) *mcp.Server {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "get_adherence_summary",
 		Title:       "Get adherence summary",
+		Meta:        cardMeta,
 		Description: "Summarize the last few days: doses taken, skipped and missed per medicine, the adherence percentage, and the daily check-ins with mood. Use it for weekly family updates.",
 		Annotations: readOnly,
 	}, t.adherenceSummary)
@@ -101,6 +103,8 @@ func New(st *store.Store, cfg Config) *mcp.Server {
 		Annotations: additive,
 	}, t.recordCheckIn)
 
+	addApps(s)
+	t.addPrompts(s)
 	return s
 }
 

@@ -111,5 +111,6 @@ func (t *tools) adherenceSummary(_ context.Context, _ *mcp.CallToolRequest, in a
 		out.Moods[string(c.Mood)]++
 		out.CheckIns = append(out.CheckIns, checkIn{At: c.At.In(loc).Format(time.RFC3339), Mood: string(c.Mood), Note: c.Note})
 	}
-	return nil, out, nil
+	res, err := spoken(adherenceSpeech(out), out)
+	return res, out, err
 }

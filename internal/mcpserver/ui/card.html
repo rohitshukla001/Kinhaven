@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kinhaven</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: var(--color-background-primary, light-dark(#fbfaf7, #16181d));
+    --panel: var(--color-background-secondary, light-dark(#f1eee8, #20232a));
+    --text: var(--color-text-primary, light-dark(#1d1f24, #f2f1ee));
+    --muted: var(--color-text-secondary, light-dark(#5b5f69, #a9acb4));
+    --line: var(--color-border-primary, light-dark(#ddd8cf, #343841));
+    --taken: light-dark(#1f7a4d, #5fd39a);
+    --taken-bg: light-dark(#e3f4ea, #17372a);
+    --due: light-dark(#9a5b00, #f5b955);
+    --due-bg: light-dark(#fdf0d8, #3d2e12);
+    --missed: light-dark(#b42318, #ff8a7a);
+    --missed-bg: light-dark(#fde6e3, #43201c);
+    --skipped: light-dark(#5b5f69, #a9acb4);
+    --skipped-bg: light-dark(#ebe9e4, #2b2e35);
+    --upcoming: light-dark(#2f5d8a, #8cb8e8);
+    --upcoming-bg: light-dark(#e6eef7, #1d2c3d);
+    --radius: var(--border-radius-lg, 18px);
+    font-family: var(--font-sans, "Segoe UI", system-ui, -apple-system, sans-serif);
+  }
+  :root[data-theme="light"] { color-scheme: light; }
+  :root[data-theme="dark"] { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-size: 18px; line-height: 1.35; }
+  main { padding: 22px 26px 26px; max-width: 960px; margin: 0 auto; }
+  header { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+  h1 { font-size: 30px; margin: 0; font-weight: 650; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); font-size: 18px; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .chip { padding: 6px 12px; border-radius: 999px; font-size: 16px; font-weight: 600; }
+  ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .dose { display: grid; grid-template-columns: 88px 1fr auto; align-items: center; gap: 16px; padding: 14px 16px; border-radius: var(--radius); background: var(--panel); border-left: 6px solid var(--line); }
+  .time { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .name { font-size: 21px; font-weight: 600; }
+  .meta { color: var(--muted); font-size: 16px; }
+  .right { display: flex; align-items: center; gap: 10px; }
+  .pill { padding: 5px 12px; border-radius: 999px; font-size: 15px; font-weight: 700; text-transform: capitalize; }
+  button { font: inherit; font-size: 17px; font-weight: 650; padding: 10px 18px; border-radius: 12px; border: 0; cursor: pointer; background: var(--taken); color: var(--bg); min-height: 48px; }
+  button:disabled { opacity: 0.6; cursor: progress; }
+  button:focus-visible { outline: 3px solid var(--upcoming); outline-offset: 2px; }
+  .taken { border-left-color: var(--taken); } .taken .pill, .chip.taken { background: var(--taken-bg); color: var(--taken); }
+  .due { border-left-color: var(--due); } .due .pill, .chip.due { background: var(--due-bg); color: var(--due); }
+  .missed { border-left-color: var(--missed); } .missed .pill, .chip.missed { background: var(--missed-bg); color: var(--missed); }
+  .skipped { border-left-color: var(--skipped); } .skipped .pill, .chip.skipped { background: var(--skipped-bg); color: var(--skipped); }
+  .upcoming { border-left-color: var(--upcoming); } .upcoming .pill, .chip.upcoming { background: var(--upcoming-bg); color: var(--upcoming); }
+  .score { display: flex; align-items: baseline; gap: 14px; margin-bottom: 18px; }
+  .score b { font-size: 64px; line-height: 1; font-weight: 750; font-variant-numeric: tabular-nums; }
+  .bar { display: flex; height: 14px; border-radius: 7px; overflow: hidden; background: var(--line); margin-top: 8px; }
+  .bar span { display: block; }
+  .bar .taken { background: var(--taken); } .bar .skipped { background: var(--skipped); } .bar .missed { background: var(--missed); }
+  .med { padding: 14px 16px; border-radius: var(--radius); background: var(--panel); }
+  .med-head { display: flex; justify-content: space-between; gap: 12px; }
+  h2 { font-size: 20px; margin: 22px 0 10px; }
+  .note { padding: 12px 16px; border-radius: var(--radius); background: var(--panel); }
+  .empty, .notice { color: var(--muted); padding: 18px 0; }
+  .toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 16px; }
+  @media (max-width: 560px) {
+    .dose { grid-template-columns: 70px 1fr; }
+    .right { grid-column: 1 / -1; justify-content: space-between; }
+  }
+</style>
+</head>
+<body>
+<main id="app"><p class="notice">Loading…</p></main>
+<script>
+const app = document.getElementById("app");
+const pending = new Map();
+let nextId = 1;
+
+function send(message) {
+  window.parent.postMessage({ jsonrpc: "2.0", ...message }, "*");
+}
+
+function request(method, params) {
+  const id = nextId++;
+  send({ id, method, params });
+  return new Promise((resolve, reject) => pending.set(id, { resolve, reject }));
+}
+
+function notify(method, params) {
+  send({ method, params });
+}
+
+window.addEventListener("message", (event) => {
+  if (event.source !== window.parent) return;
+  const msg = event.data;
+  if (!msg || msg.jsonrpc !== "2.0") return;
+
+  if (msg.method === "ping" && msg.id !== undefined) {
+    send({ id: msg.id, result: {} });
+    return;
+  }
+  if (msg.id !== undefined && pending.has(msg.id)) {
+    const { resolve, reject } = pending.get(msg.id);
+    pending.delete(msg.id);
+    if (msg.error) reject(new Error(msg.error.message || "Request failed"));
+    else resolve(msg.result);
+    return;
+  }
+  switch (msg.method) {
+    case "ui/notifications/tool-result":
+      render(msg.params);
+      break;
+    case "ui/notifications/host-context-changed":
+      applyContext(msg.params);
+      break;
+    case "ui/notifications/tool-cancelled":
+      notice("The request was cancelled.");
+      break;
+  }
+});
+
+function applyContext(ctx) {
+  if (!ctx) return;
+  if (ctx.theme) document.documentElement.dataset.theme = ctx.theme;
+  const vars = ctx.styles && ctx.styles.variables;
+  if (vars) {
+    for (const [name, value] of Object.entries(vars)) {
+      if (value) document.documentElement.style.setProperty(name, value);
+    }
+  }
+}
+
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+function notice(text) {
+  app.replaceChildren(el("p", "notice", text));
+}
+
+function toast(text) {
+  const t = el("div", "toast", text);
+  t.setAttribute("role", "status");
+  document.body.append(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+function longDate(isoDate) {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString(undefined, {
+    weekday: "long", day: "numeric", month: "long", timeZone: "UTC",
+  });
+}
+
+function shortDate(isoDate) {
+  const [y, m, d] = isoDate.slice(0, 10).split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString(undefined, {
+    weekday: "short", day: "numeric", month: "short", timeZone: "UTC",
+  });
+}
+
+function render(result) {
+  if (!result) return;
+  if (result.isError) {
+    const text = (result.content || []).map((c) => c.text).filter(Boolean).join(" ");
+    notice(text || "Something went wrong.");
+    return;
+  }
+  const data = result.structuredContent;
+  if (data && Array.isArray(data.doses)) renderSchedule(data);
+  else if (data && data.moods) renderSummary(data);
+  else notice("Nothing to show.");
+}
+
+function renderSchedule(data) {
+  const header = el("header");
+  header.append(el("h1", "", data.name), el("span", "sub", longDate(data.date)));
+
+  const chips = el("div", "chips");
+  for (const status of ["taken", "due", "missed", "skipped", "upcoming"]) {
+    const n = data.summary[status];
+    if (n) chips.append(el("span", "chip " + status, n + " " + status));
+  }
+
+  const list = el("ul");
+  for (const dose of data.doses) list.append(doseRow(data, dose));
+  app.replaceChildren(header, chips, data.doses.length ? list : el("p", "empty", "No doses scheduled."));
+}
+
+function doseRow(data, dose) {
+  const row = el("li", "dose " + dose.status);
+  const info = el("div");
+  info.append(el("div", "name", dose.medication + (dose.dosage ? " · " + dose.dosage : "")));
+  const details = [];
+  if (dose.instructions) details.push(dose.instructions);
+  if (dose.note) details.push(dose.note);
+  if (dose.family_alerted_at) details.push("Family alerted at " + dose.family_alerted_at.slice(11, 16));
+  if (details.length) info.append(el("div", "meta", details.join(" · ")));
+
+  const right = el("div", "right");
+  right.append(el("span", "pill", dose.status));
+  if (dose.status === "due" || dose.status === "missed") {
+    const button = el("button", "", "Mark taken");
+    button.setAttribute("aria-label", "Mark " + dose.medication + " at " + dose.time + " as taken");
+    button.addEventListener("click", () => markTaken(data, dose, button));
+    right.append(button);
+  }
+  row.append(el("div", "time", dose.time), info, right);
+  return row;
+}
+
+async function markTaken(data, dose, button) {
+  button.disabled = true;
+  try {
+    const logged = await request("tools/call", {
+      name: "log_dose",
+      arguments: { medication_id: dose.medication_id, status: "taken", scheduled_at: dose.scheduled_at },
+    });
+    if (logged.isError) throw new Error((logged.content || [])[0]?.text || "Could not log the dose.");
+    const refreshed = await request("tools/call", {
+      name: "get_schedule",
+      arguments: { recipient_id: data.recipient_id, date: data.date },
+    });
+    render(refreshed);
+    toast(dose.medication + " marked as taken.");
+  } catch (err) {
+    button.disabled = false;
+    toast(err.message);
+  }
+}
+
+function renderSummary(data) {
+  const header = el("header");
+  header.append(el("h1", "", data.name), el("span", "sub", longDate(data.from) + " – " + longDate(data.to)));
+
+  const score = el("div", "score");
+  const counted = data.taken + data.skipped + data.missed;
+  score.append(
+    el("b", "", data.adherence_percent === undefined ? "–" : data.adherence_percent + "%"),
+    el("span", "sub", counted ? data.taken + " of " + counted + " doses taken" : "No doses due yet"),
+  );
+
+  const meds = el("ul");
+  for (const m of data.medications) {
+    const item = el("li", "med");
+    const head = el("div", "med-head");
+    head.append(el("span", "name", m.medication), el("span", "sub", m.adherence_percent === undefined ? "" : m.adherence_percent + "%"));
+    const total = m.taken + m.skipped + m.missed;
+    const bar = el("div", "bar");
+    bar.setAttribute("role", "img");
+    bar.setAttribute("aria-label", m.taken + " taken, " + m.skipped + " skipped, " + m.missed + " missed");
+    for (const status of ["taken", "skipped", "missed"]) {
+      if (!m[status]) continue;
+      const part = el("span", status);
+      part.style.width = (m[status] * 100 / total) + "%";
+      bar.append(part);
+    }
+    item.append(head, bar, el("div", "meta", m.taken + " taken · " + m.skipped + " skipped · " + m.missed + " missed"));
+    meds.append(item);
+  }
+
+  const moods = el("div", "chips");
+  for (const [mood, cls] of [["good", "taken"], ["okay", "due"], ["poor", "missed"]]) {
+    if (data.moods[mood]) moods.append(el("span", "chip " + cls, data.moods[mood] + " " + mood));
+  }
+
+  const notes = el("ul");
+  for (const c of data.check_ins.filter((c) => c.note).slice(-3).reverse()) {
+    notes.append(el("li", "note", shortDate(c.at) + " · " + c.mood + ": " + c.note));
+  }
+
+  const parts = [header, score, meds];
+  if (data.check_ins.length) parts.push(el("h2", "", "Check-ins"), moods);
+  if (notes.childElementCount) parts.push(notes);
+  app.replaceChildren(...parts);
+}
+
+let lastSize = "";
+new ResizeObserver(() => {
+  const rect = document.documentElement.getBoundingClientRect();
+  const size = Math.ceil(rect.width) + "x" + Math.ceil(rect.height);
+  if (size === lastSize) return;
+  lastSize = size;
+  notify("ui/notifications/size-changed", { width: Math.ceil(rect.width), height: Math.ceil(rect.height) });
+}).observe(document.documentElement);
+
+if (window.parent === window) {
+  notice("Open this card from an MCP Apps host.");
+} else {
+  request("ui/initialize", {
+    protocolVersion: "2026-01-26",
+    appInfo: { name: "kinhaven-card", version: "1.0.0" },
+    appCapabilities: { availableDisplayModes: ["inline"] },
+  }).then((res) => {
+    applyContext(res && res.hostContext);
+    notify("ui/notifications/initialized", {});
+  }).catch(() => notice("Could not connect to the host."));
+}
+</script>
+</body>
+</html>
