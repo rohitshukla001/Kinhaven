@@ -37,7 +37,7 @@ func (Mock) Converse(_ context.Context, _ string, _ []Tool, history []Message) (
 		if len(results) == 0 {
 			return use(id, "record_checkin", map[string]any{"mood": moodOf(question), "note": question}), nil
 		}
-		return say(fmt.Sprintf("Thank you. I noted that you feel %s today.", moodOf(question))), nil
+		return say(checkInReply(moodOf(question))), nil
 
 	case logDose:
 		switch len(results) {
@@ -106,6 +106,16 @@ func moodOf(q string) string {
 		return "okay"
 	}
 	return "good"
+}
+
+func checkInReply(mood string) string {
+	switch mood {
+	case "poor":
+		return "I'm sorry you're not feeling well. I noted it for the family."
+	case "okay":
+		return "Thank you. I noted that you feel okay today."
+	}
+	return "That's good to hear. I noted that you feel well today."
 }
 
 func findMedication(listJSON, question string) (string, []string, error) {

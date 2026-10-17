@@ -178,7 +178,7 @@ func TestMockConversation(t *testing.T) {
 		{"She just took her Metformin", "Done. I marked the 08:00 dose of Metformin as taken."},
 		{"She took her vitamins", "Which medicine was it? I know about Metformin."},
 		{"How was her week?", "Kamala took 1 of 1 doses (100%)"},
-		{"I feel a bit tired today", "Thank you. I noted that you feel poor today."},
+		{"I feel a bit tired today", "I noted it for the family."},
 	} {
 		var turn Turn
 		history, turn, err = a.Ask(context.Background(), history, step.say)

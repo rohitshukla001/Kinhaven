@@ -110,8 +110,14 @@ func TestLoadReportsEveryError(t *testing.T) {
 
 func TestLoadSim(t *testing.T) {
 	cfg, err := LoadSim(envFrom(nil))
-	if err != nil || cfg.MCPURL != "http://127.0.0.1:8080/mcp" || cfg.Model != "mock" {
+	if err != nil || cfg.Addr != "127.0.0.1:8090" || cfg.MCPURL != "http://127.0.0.1:8080/mcp" || cfg.Model != "mock" {
 		t.Errorf("defaults = %+v, %v", cfg, err)
+	}
+	if _, err := LoadSim(envFrom(map[string]string{"KINHAVEN_SIM_ADDR": "0.0.0.0:8090"})); err == nil || !strings.Contains(err.Error(), "KINHAVEN_SIM_ADDR") {
+		t.Errorf("public bind without opt-in: %v", err)
+	}
+	if _, err := LoadSim(envFrom(map[string]string{"KINHAVEN_SIM_ADDR": "0.0.0.0:8090", "KINHAVEN_ALLOW_PUBLIC_BIND": "true"})); err != nil {
+		t.Errorf("public bind with opt-in: %v", err)
 	}
 	cfg, err = LoadSim(envFrom(map[string]string{
 		"KINHAVEN_SIM_MCP_URL": "https://kinhaven.example.com/mcp",

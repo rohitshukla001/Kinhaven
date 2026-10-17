@@ -43,6 +43,10 @@ run:
 sim:
 	$(GO) run ./cmd/kinhaven-sim
 
+.PHONY: sim-console
+sim-console:
+	$(GO) run ./cmd/kinhaven-sim console
+
 .PHONY: check
 check: lint test build
 

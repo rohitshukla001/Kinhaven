@@ -105,23 +105,36 @@ func parseOrigins(raw string) ([]string, error) {
 }
 
 type SimConfig struct {
+	Addr   string
 	MCPURL string
 	Model  string
 }
 
 func LoadSim(getenv func(string) string) (SimConfig, error) {
+	get := func(key, def string) string {
+		if v := strings.TrimSpace(getenv(key)); v != "" {
+			return v
+		}
+		return def
+	}
 	cfg := SimConfig{
-		MCPURL: strings.TrimSpace(getenv("KINHAVEN_SIM_MCP_URL")),
-		Model:  strings.TrimSpace(getenv("KINHAVEN_SIM_MODEL")),
+		Addr:   get("KINHAVEN_SIM_ADDR", "127.0.0.1:8090"),
+		MCPURL: get("KINHAVEN_SIM_MCP_URL", "http://127.0.0.1:8080/mcp"),
+		Model:  get("KINHAVEN_SIM_MODEL", "mock"),
 	}
-	if cfg.MCPURL == "" {
-		cfg.MCPURL = "http://127.0.0.1:8080/mcp"
+	var errs []error
+	allowPublic, err := strconv.ParseBool(get("KINHAVEN_ALLOW_PUBLIC_BIND", "false"))
+	if err != nil {
+		errs = append(errs, errors.New("KINHAVEN_ALLOW_PUBLIC_BIND: want true or false"))
 	}
-	if cfg.Model == "" {
-		cfg.Model = "mock"
+	if err := checkBindHost(cfg.Addr, allowPublic); err != nil {
+		errs = append(errs, fmt.Errorf("KINHAVEN_SIM_ADDR: %w", err))
 	}
 	if u, err := url.Parse(cfg.MCPURL); err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
-		return SimConfig{}, fmt.Errorf("KINHAVEN_SIM_MCP_URL: %q is not an http or https URL", cfg.MCPURL)
+		errs = append(errs, fmt.Errorf("KINHAVEN_SIM_MCP_URL: %q is not an http or https URL", cfg.MCPURL))
+	}
+	if err := errors.Join(errs...); err != nil {
+		return SimConfig{}, err
 	}
 	return cfg, nil
 }
