@@ -36,6 +36,9 @@ Kinhaven is an entry in the Alexa+ track of the
 - Spoken one-line summaries in tool results for voice-only hosts.
 - Prompts for a daily briefing and a weekly family update, and a care-plan
   resource for each person.
+- Alexa+ simulator agent: an Amazon Bedrock tool-use loop that acts as an
+  MCP client to the Kinhaven server. A built-in mock model runs the same loop
+  without AWS, so the project can be tested at no cost.
 - Missed-dose SMS alerts to family through Amazon SNS. Each contact gets one
   message per missed dose, and alerts that fail to send are retried.
 - Origin checks and DNS-rebinding protection on the MCP endpoint.
@@ -66,6 +69,7 @@ Amazon SNS ───────────────► Family members (SMS)
 - GNU Make
 - Git
 - For SMS alerts: an AWS account with permission to call `sns:Publish`
+- For the Bedrock agent: access to an Amazon Bedrock model that supports tool use
 
 ## Local setup
 
@@ -122,6 +126,30 @@ npx @modelcontextprotocol/inspector
 
 Select the **Streamable HTTP** transport and enter `http://127.0.0.1:8080/mcp`.
 
+## Using the simulator
+
+The simulator agent connects to the MCP server, lists its tools and answers
+requests in a text console.
+
+1. Start the server in one terminal with `make run`.
+2. Start the simulator in a second terminal:
+
+   ```sh
+   make sim
+   ```
+
+3. Type a request, for example `Has Mom taken her tablets?`. An empty line
+   quits.
+
+The default model is `mock`, a rule-based planner that needs no AWS account.
+To use Amazon Bedrock, set a model ID that supports tool use:
+
+```sh
+export AWS_REGION=ap-south-1
+export KINHAVEN_SIM_MODEL=global.anthropic.claude-haiku-4-5-20251001-v1:0
+make sim
+```
+
 ## Configuration
 
 The server reads these environment variables. All of them are optional.
@@ -138,6 +166,28 @@ Do not put secrets in `.env.example`.
 | `KINHAVEN_ALERTS` | `log` | `sns` sends SMS through Amazon SNS. `log` writes alerts to the server log. `off` turns alerts off. |
 | `KINHAVEN_ALERT_INTERVAL` | `1m` | How often the server checks for missed doses. The minimum is `1s`. |
 | `KINHAVEN_LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error`. |
+
+The simulator reads these variables:
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `KINHAVEN_SIM_MCP_URL` | `http://127.0.0.1:8080/mcp` | MCP endpoint of the Kinhaven server. |
+| `KINHAVEN_SIM_MODEL` | `mock` | `mock`, or an Amazon Bedrock model ID or inference profile ID. |
+
+### Amazon Bedrock
+
+The simulator calls the Bedrock Converse API with the standard AWS settings.
+Give the AWS identity `bedrock:InvokeModel` on the model or inference profile:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{ "Effect": "Allow", "Action": "bedrock:InvokeModel", "Resource": "*" }]
+}
+```
+
+Global inference profiles, such as `global.anthropic.claude-haiku-4-5-20251001-v1:0`,
+route requests from `ap-south-1` to other AWS Regions.
 
 ### Amazon SNS
 
@@ -163,6 +213,7 @@ or an IAM role.
 | Command | Purpose |
 |---|---|
 | `make run` | Runs the server. |
+| `make sim` | Runs the simulator console. |
 | `make test` | Runs all tests with the race detector. |
 | `make lint` | Runs the `gofmt` check and `go vet`. |
 | `make build` | Builds the binaries into `bin/`. |
@@ -173,6 +224,8 @@ or an IAM role.
 
 ```text
 cmd/kinhaven-server/     Server entry point
+cmd/kinhaven-sim/        Simulator console entry point
+internal/agent/          Agent loop, Amazon Bedrock model and mock model
 internal/alert/          Missed-dose watcher and SMS senders
 internal/care/           Care data types, validation rules and the dose schedule
 internal/config/         Loads and validates configuration
@@ -196,6 +249,9 @@ internal/version/        Build metadata
 | Tool returns `more than one person is cared for` | Call `list_people`, then pass `recipient_id`. |
 | `Amazon SNS needs an AWS region` at startup | Set `AWS_REGION`, or set `KINHAVEN_ALERTS=log`. |
 | Alerts show in the log but no SMS arrives | Check that the phone number is verified in the SNS SMS sandbox and that the account has an SMS spending limit above zero. |
+| `Amazon Bedrock needs an AWS region` | Set `AWS_REGION`, or set `KINHAVEN_SIM_MODEL=mock`. |
+| Bedrock returns `AccessDeniedException` | Check the IAM policy and that the model is available in your account and Region. |
+| Simulator says `connect to ...` | Start the server first, and check `KINHAVEN_SIM_MCP_URL`. |
 | `log_dose` returns `already recorded` | Pass `scheduled_at` from `get_schedule` to change the record for one dose. |
 
 ## Related documentation
@@ -205,6 +261,7 @@ internal/version/        Build metadata
 - [MCP Go SDK](https://github.com/modelcontextprotocol/go-sdk)
 - [MCP Inspector](https://github.com/modelcontextprotocol/inspector)
 - [MCP Apps specification](https://github.com/modelcontextprotocol/ext-apps/blob/main/specification/2026-01-26/apps.mdx)
+- [Amazon Bedrock Converse API](https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html)
 - [Amazon SNS SMS messaging](https://docs.aws.amazon.com/sns/latest/dg/sns-mobile-phone-number-as-subscriber.html)
 
 ## License

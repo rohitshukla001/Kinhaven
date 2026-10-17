@@ -103,3 +103,25 @@ func parseOrigins(raw string) ([]string, error) {
 	}
 	return origins, nil
 }
+
+type SimConfig struct {
+	MCPURL string
+	Model  string
+}
+
+func LoadSim(getenv func(string) string) (SimConfig, error) {
+	cfg := SimConfig{
+		MCPURL: strings.TrimSpace(getenv("KINHAVEN_SIM_MCP_URL")),
+		Model:  strings.TrimSpace(getenv("KINHAVEN_SIM_MODEL")),
+	}
+	if cfg.MCPURL == "" {
+		cfg.MCPURL = "http://127.0.0.1:8080/mcp"
+	}
+	if cfg.Model == "" {
+		cfg.Model = "mock"
+	}
+	if u, err := url.Parse(cfg.MCPURL); err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		return SimConfig{}, fmt.Errorf("KINHAVEN_SIM_MCP_URL: %q is not an http or https URL", cfg.MCPURL)
+	}
+	return cfg, nil
+}

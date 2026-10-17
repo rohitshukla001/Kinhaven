@@ -39,6 +39,10 @@ build:
 run:
 	$(GO) run ./cmd/kinhaven-server
 
+.PHONY: sim
+sim:
+	$(GO) run ./cmd/kinhaven-sim
+
 .PHONY: check
 check: lint test build
 

@@ -107,3 +107,20 @@ func TestLoadReportsEveryError(t *testing.T) {
 		}
 	}
 }
+
+func TestLoadSim(t *testing.T) {
+	cfg, err := LoadSim(envFrom(nil))
+	if err != nil || cfg.MCPURL != "http://127.0.0.1:8080/mcp" || cfg.Model != "mock" {
+		t.Errorf("defaults = %+v, %v", cfg, err)
+	}
+	cfg, err = LoadSim(envFrom(map[string]string{
+		"KINHAVEN_SIM_MCP_URL": "https://kinhaven.example.com/mcp",
+		"KINHAVEN_SIM_MODEL":   "global.anthropic.claude-haiku-4-5-20251001-v1:0",
+	}))
+	if err != nil || cfg.MCPURL != "https://kinhaven.example.com/mcp" || cfg.Model != "global.anthropic.claude-haiku-4-5-20251001-v1:0" {
+		t.Errorf("overrides = %+v, %v", cfg, err)
+	}
+	if _, err := LoadSim(envFrom(map[string]string{"KINHAVEN_SIM_MCP_URL": "localhost:8080/mcp"})); err == nil {
+		t.Error("want an error for a URL without a scheme")
+	}
+}
