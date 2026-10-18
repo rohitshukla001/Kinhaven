@@ -15,10 +15,10 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/agent"
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/care"
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/mcpserver"
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/store"
+	"github.com/rohitshukla001/Kinhaven/internal/agent"
+	"github.com/rohitshukla001/Kinhaven/internal/care"
+	"github.com/rohitshukla001/Kinhaven/internal/mcpserver"
+	"github.com/rohitshukla001/Kinhaven/internal/store"
 )
 
 type fixture struct {

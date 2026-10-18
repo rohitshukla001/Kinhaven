@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/care"
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/mcpserver"
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/store"
+	"github.com/rohitshukla001/Kinhaven/internal/care"
+	"github.com/rohitshukla001/Kinhaven/internal/mcpserver"
+	"github.com/rohitshukla001/Kinhaven/internal/store"
 )
 
 func TestConsoleWithMockModel(t *testing.T) {

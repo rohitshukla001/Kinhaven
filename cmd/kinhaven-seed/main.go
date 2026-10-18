@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/config"
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/demo"
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/store"
+	"github.com/rohitshukla001/Kinhaven/internal/config"
+	"github.com/rohitshukla001/Kinhaven/internal/demo"
+	"github.com/rohitshukla001/Kinhaven/internal/store"
 )
 
 func main() {

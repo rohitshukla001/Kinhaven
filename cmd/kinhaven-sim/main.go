@@ -14,11 +14,11 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/agent"
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/config"
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/server"
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/sim"
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/version"
+	"github.com/rohitshukla001/Kinhaven/internal/agent"
+	"github.com/rohitshukla001/Kinhaven/internal/config"
+	"github.com/rohitshukla001/Kinhaven/internal/server"
+	"github.com/rohitshukla001/Kinhaven/internal/sim"
+	"github.com/rohitshukla001/Kinhaven/internal/version"
 )
 
 func main() {

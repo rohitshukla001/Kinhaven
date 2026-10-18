@@ -10,7 +10,7 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/care"
+	"github.com/rohitshukla001/Kinhaven/internal/care"
 )
 
 const maxSummaryDays = 90

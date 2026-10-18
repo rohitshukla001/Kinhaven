@@ -76,8 +76,8 @@ Amazon SNS ───────────────► Family members (SMS)
 ## Local setup
 
 ```sh
-git clone https://github.com/rohitshukla001/AmazonDeveloperHackathon.git
-cd AmazonDeveloperHackathon
+git clone https://github.com/rohitshukla001/Kinhaven.git
+cd Kinhaven
 cp .env.example .env
 make check
 make seed

@@ -4,8 +4,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/care"
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/store"
+	"github.com/rohitshukla001/Kinhaven/internal/care"
+	"github.com/rohitshukla001/Kinhaven/internal/store"
 )
 
 const historyDays = 7

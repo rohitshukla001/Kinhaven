@@ -13,8 +13,8 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/care"
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/store"
+	"github.com/rohitshukla001/Kinhaven/internal/care"
+	"github.com/rohitshukla001/Kinhaven/internal/store"
 )
 
 type sms struct{ phone, text string }
@@ -91,7 +91,7 @@ func (f *fixture) contact(t *testing.T, name, phone string, notify bool) care.Co
 
 func (f *fixture) medication(t *testing.T, name, dosage string, times ...string) care.Medication {
 	t.Helper()
-	m := care.Medication{RecipientID: f.person.ID, Name: name, Dosage: dosage}
+	m := care.Medication{RecipientID: f.person.ID, Name: name, Dosage: dosage, CreatedAt: f.day}
 	for _, s := range times {
 		c, err := care.ParseClock(s)
 		if err != nil {

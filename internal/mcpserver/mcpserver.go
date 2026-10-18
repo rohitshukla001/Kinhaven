@@ -7,8 +7,8 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/store"
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/version"
+	"github.com/rohitshukla001/Kinhaven/internal/store"
+	"github.com/rohitshukla001/Kinhaven/internal/version"
 )
 
 const instructions = `Kinhaven helps a family look after an elderly person: their medicines, the doses they take and how they feel each day.

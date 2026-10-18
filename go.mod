@@ -1,4 +1,4 @@
-module github.com/rohitshukla001/AmazonDeveloperHackathon
+module github.com/rohitshukla001/Kinhaven
 
 go 1.25.0
 

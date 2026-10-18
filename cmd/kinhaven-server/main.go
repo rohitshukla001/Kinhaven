@@ -13,11 +13,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/alert"
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/config"
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/mcpserver"
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/server"
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/store"
+	"github.com/rohitshukla001/Kinhaven/internal/alert"
+	"github.com/rohitshukla001/Kinhaven/internal/config"
+	"github.com/rohitshukla001/Kinhaven/internal/mcpserver"
+	"github.com/rohitshukla001/Kinhaven/internal/server"
+	"github.com/rohitshukla001/Kinhaven/internal/store"
 )
 
 func main() {

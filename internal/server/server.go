@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/version"
+	"github.com/rohitshukla001/Kinhaven/internal/version"
 )
 
 const shutdownGrace = 10 * time.Second

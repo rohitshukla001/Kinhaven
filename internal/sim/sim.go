@@ -14,7 +14,7 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/agent"
+	"github.com/rohitshukla001/Kinhaven/internal/agent"
 )
 
 //go:embed web/index.html

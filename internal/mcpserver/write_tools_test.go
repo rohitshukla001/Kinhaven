@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/care"
+	"github.com/rohitshukla001/Kinhaven/internal/care"
 )
 
 func TestAddPersonAndContact(t *testing.T) {

@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/alert"
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/care"
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/store"
+	"github.com/rohitshukla001/Kinhaven/internal/alert"
+	"github.com/rohitshukla001/Kinhaven/internal/care"
+	"github.com/rohitshukla001/Kinhaven/internal/store"
 )
 
 const grace = time.Hour

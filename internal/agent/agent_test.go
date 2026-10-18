@@ -11,9 +11,9 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/care"
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/mcpserver"
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/store"
+	"github.com/rohitshukla001/Kinhaven/internal/care"
+	"github.com/rohitshukla001/Kinhaven/internal/mcpserver"
+	"github.com/rohitshukla001/Kinhaven/internal/store"
 )
 
 type kinhaven struct {
@@ -56,7 +56,7 @@ func (k *kinhaven) seed(t *testing.T) care.Recipient {
 	if err != nil {
 		t.Fatal(err)
 	}
-	m := care.Medication{RecipientID: r.ID, Name: "Metformin", Dosage: "500 mg"}
+	m := care.Medication{RecipientID: r.ID, Name: "Metformin", Dosage: "500 mg", CreatedAt: k.day}
 	for _, s := range []string{"08:00", "20:30"} {
 		c, _ := care.ParseClock(s)
 		m.Times = append(m.Times, c)

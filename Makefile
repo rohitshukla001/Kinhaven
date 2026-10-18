@@ -4,7 +4,7 @@ export
 GO       ?= go
 BIN_DIR  ?= bin
 VERSION  ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
-MODULE   := github.com/rohitshukla001/AmazonDeveloperHackathon
+MODULE   := github.com/rohitshukla001/Kinhaven
 LDFLAGS  := -s -w -X $(MODULE)/internal/version.Version=$(VERSION)
 
 .DEFAULT_GOAL := check
@@ -48,7 +48,7 @@ seed:
 
 .PHONY: e2e
 e2e:
-	GO=$(GO) ./scripts/e2e.sh
+	GO=$(GO) bash ./scripts/e2e.sh
 
 .PHONY: sim
 sim:

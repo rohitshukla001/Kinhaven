@@ -13,9 +13,9 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/care"
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/server"
-	"github.com/rohitshukla001/AmazonDeveloperHackathon/internal/store"
+	"github.com/rohitshukla001/Kinhaven/internal/care"
+	"github.com/rohitshukla001/Kinhaven/internal/server"
+	"github.com/rohitshukla001/Kinhaven/internal/store"
 )
 
 type fixture struct {
@@ -73,6 +73,9 @@ func (f *fixture) addPerson(t *testing.T, name string) care.Recipient {
 
 func (f *fixture) addMedication(t *testing.T, m care.Medication) care.Medication {
 	t.Helper()
+	if m.CreatedAt.IsZero() {
+		m.CreatedAt = f.day
+	}
 	m, err := f.store.AddMedication(m)
 	if err != nil {
 		t.Fatal(err)
