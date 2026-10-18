@@ -1,0 +1,14 @@
+/bin/
+/dist/
+coverage.out
+
+/data/
+*.db
+.env
+.env.*
+!.env.example
+
+node_modules/
+.idea/
+.vscode/
+.DS_Store
