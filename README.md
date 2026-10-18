@@ -36,9 +36,11 @@ Kinhaven is an entry in the Alexa+ track of the
 - Spoken one-line summaries in tool results for voice-only hosts.
 - Prompts for a daily briefing and a weekly family update, and a care-plan
   resource for each person.
-- Alexa+ simulator agent: an Amazon Bedrock tool-use loop that acts as an
-  MCP client to the Kinhaven server. A built-in mock model runs the same loop
-  without AWS, so the project can be tested at no cost.
+- Alexa+ simulator: a web page styled as an Echo Show with voice input and
+  spoken replies. It hosts the MCP App card and shows every MCP tool call.
+- Simulator agent: an Amazon Bedrock tool-use loop that acts as an MCP client
+  to the Kinhaven server. A built-in mock model runs the same loop without
+  AWS, so the project can be tested at no cost.
 - Missed-dose SMS alerts to family through Amazon SNS. Each contact gets one
   message per missed dose, and alerts that fail to send are retried.
 - Origin checks and DNS-rebinding protection on the MCP endpoint.
@@ -78,8 +80,13 @@ git clone https://github.com/rohitshukla001/AmazonDeveloperHackathon.git
 cd AmazonDeveloperHackathon
 cp .env.example .env
 make check
+make seed
 make run
 ```
+
+The Makefile reads the variables in `.env`. The `make seed` command writes a
+week of demo data into `KINHAVEN_DATA_DIR`. To start with an empty data store,
+do not run `make seed`.
 
 To make sure that the server operates, send a request to the health endpoint:
 
@@ -88,6 +95,32 @@ curl http://127.0.0.1:8080/healthz
 ```
 
 The server sends `{"status":"ok","name":"kinhaven","version":"dev"}`.
+
+## Demo data
+
+The `kinhaven-seed` command adds one person, Kamala, with this data:
+
+- Two family contacts. Priya gets missed-dose alerts. Arjun does not.
+- Five medicines with a daily or weekly schedule.
+- Dose records for the last seven days. Most doses are taken. Three doses are
+  missed and two doses are skipped with a note.
+- One check-in for each of the last seven days, with a mood and a note.
+- Records of the alerts that Priya got for the three missed doses.
+- Today's doses up to now. The most recent missed dose stays open, so the
+  watcher sends an alert when the server starts.
+
+All times are relative to the time when you run the command, in
+`KINHAVEN_TIMEZONE`.
+
+Run `make seed` before you start the server. The server keeps the data in
+memory, and it writes over the file at the next change. The command does not
+change a data store that already has people in it.
+
+To seed the data again:
+
+1. Stop the server.
+2. Remove `data/kinhaven.json`.
+3. Run `make seed`.
 
 ## Using the MCP server
 
@@ -128,18 +161,20 @@ Select the **Streamable HTTP** transport and enter `http://127.0.0.1:8080/mcp`.
 
 ## Using the simulator
 
-The simulator agent connects to the MCP server, lists its tools and answers
-requests in a text console.
+The simulator connects to the MCP server, lists its tools and answers requests
+through an agent.
 
 1. Start the server in one terminal with `make run`.
-2. Start the simulator in a second terminal:
+2. Start the simulator in a second terminal with `make sim`.
+3. Open `http://127.0.0.1:8090` in Chrome or Edge.
+4. Press the microphone button and speak, type a request, or select a
+   suggestion such as "Has Mom taken her tablets?".
 
-   ```sh
-   make sim
-   ```
+The screen shows the MCP App card for the schedule and the weekly summary.
+Select **Mark taken** on the card to record a dose. The **MCP activity** panel
+shows each tool call from the agent and from the card.
 
-3. Type a request, for example `Has Mom taken her tablets?`. An empty line
-   quits.
+For a text-only session, run `make sim-console`.
 
 The default model is `mock`, a rule-based planner that needs no AWS account.
 To use Amazon Bedrock, set a model ID that supports tool use:
@@ -171,6 +206,7 @@ The simulator reads these variables:
 
 | Variable | Default | Purpose |
 |---|---|---|
+| `KINHAVEN_SIM_ADDR` | `127.0.0.1:8090` | Listen address of the web simulator. The same loopback rule and `KINHAVEN_ALLOW_PUBLIC_BIND` apply. |
 | `KINHAVEN_SIM_MCP_URL` | `http://127.0.0.1:8080/mcp` | MCP endpoint of the Kinhaven server. |
 | `KINHAVEN_SIM_MODEL` | `mock` | `mock`, or an Amazon Bedrock model ID or inference profile ID. |
 
@@ -212,28 +248,48 @@ or an IAM role.
 
 | Command | Purpose |
 |---|---|
+| `make seed` | Writes the demo data into an empty data store. |
 | `make run` | Runs the server. |
-| `make sim` | Runs the simulator console. |
+| `make sim` | Runs the web simulator. |
+| `make sim-console` | Runs the simulator in the terminal. |
 | `make test` | Runs all tests with the race detector. |
 | `make lint` | Runs the `gofmt` check and `go vet`. |
 | `make build` | Builds the binaries into `bin/`. |
 | `make check` | Runs `lint`, `test` and `build`. |
 | `make cover` | Shows the total test coverage. |
+| `make e2e` | Runs the end-to-end test. |
+
+The end-to-end test builds the binaries and seeds a temporary data store. Then
+it starts the server and the web simulator with the mock model. It checks these
+items:
+
+- The health endpoint, the MCP `initialize` request and the `Origin` check.
+- A console conversation that reads the schedule and the summary, logs a dose
+  and records a check-in.
+- A web simulator request, and the MCP App card resource.
+- The missed-dose alert in the server log, after 08:00 in `KINHAVEN_TIMEZONE`.
+
+The test needs `curl` and uses ports 18080 and 18090. To use different ports,
+set `E2E_MCP_PORT` and `E2E_SIM_PORT`.
 
 ## Project structure
 
 ```text
 cmd/kinhaven-server/     Server entry point
-cmd/kinhaven-sim/        Simulator console entry point
+cmd/kinhaven-sim/        Simulator entry point (web and console)
+cmd/kinhaven-seed/       Demo data command
 internal/agent/          Agent loop, Amazon Bedrock model and mock model
+internal/sim/            Simulator web API and MCP Apps host page
 internal/alert/          Missed-dose watcher and SMS senders
 internal/care/           Care data types, validation rules and the dose schedule
 internal/config/         Loads and validates configuration
+internal/demo/           Demo data for one person
 internal/mcpserver/      MCP server, tools, prompts and resources
 internal/mcpserver/ui/   MCP App card (HTML)
 internal/server/         HTTP handler and server lifecycle
 internal/store/          Saves care data to a JSON file
 internal/version/        Build metadata
+scripts/e2e.sh           End-to-end test
 ```
 
 ## Troubleshooting
@@ -251,7 +307,11 @@ internal/version/        Build metadata
 | Alerts show in the log but no SMS arrives | Check that the phone number is verified in the SNS SMS sandbox and that the account has an SMS spending limit above zero. |
 | `Amazon Bedrock needs an AWS region` | Set `AWS_REGION`, or set `KINHAVEN_SIM_MODEL=mock`. |
 | Bedrock returns `AccessDeniedException` | Check the IAM policy and that the model is available in your account and Region. |
+| The microphone button is disabled | Use Chrome or Edge. Other browsers do not have the Web Speech API. You can type requests instead. |
 | Simulator says `connect to ...` | Start the server first, and check `KINHAVEN_SIM_MCP_URL`. |
+| `make seed` fails with `the data store already has people in it` | Stop the server and remove `data/kinhaven.json`, or set `KINHAVEN_DATA_DIR` to an empty folder. |
+| The demo data is gone after the server starts | The server was in operation when you ran `make seed`. Stop the server, seed the data again, then start the server. |
+| SMS to an Indian phone number does not arrive | Register a sender ID, an entity ID and a template ID for India. See the link in Related documentation. |
 | `log_dose` returns `already recorded` | Pass `scheduled_at` from `get_schedule` to change the record for one dose. |
 
 ## Related documentation
@@ -263,6 +323,7 @@ internal/version/        Build metadata
 - [MCP Apps specification](https://github.com/modelcontextprotocol/ext-apps/blob/main/specification/2026-01-26/apps.mdx)
 - [Amazon Bedrock Converse API](https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html)
 - [Amazon SNS SMS messaging](https://docs.aws.amazon.com/sns/latest/dg/sns-mobile-phone-number-as-subscriber.html)
+- [SMS sender ID registration for India](https://docs.aws.amazon.com/sms-voice/latest/userguide/registrations-sms-senderid-india.html)
 
 ## License
 

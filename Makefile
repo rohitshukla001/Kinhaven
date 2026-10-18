@@ -1,3 +1,6 @@
+-include .env
+export
+
 GO       ?= go
 BIN_DIR  ?= bin
 VERSION  ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
@@ -38,6 +41,14 @@ build:
 .PHONY: run
 run:
 	$(GO) run ./cmd/kinhaven-server
+
+.PHONY: seed
+seed:
+	$(GO) run ./cmd/kinhaven-seed
+
+.PHONY: e2e
+e2e:
+	GO=$(GO) ./scripts/e2e.sh
 
 .PHONY: sim
 sim:

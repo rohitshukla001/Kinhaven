@@ -181,7 +181,9 @@ func (s *Store) AddMedication(m care.Medication) (care.Medication, error) {
 	m = cloneMedication(m)
 	m.ID = newID("med")
 	m.Stopped = false
-	m.CreatedAt = time.Now().UTC()
+	if m.CreatedAt.IsZero() {
+		m.CreatedAt = time.Now().UTC()
+	}
 	err := s.update(func(d *snapshot) error {
 		if _, err := findRecipient(*d, m.RecipientID); err != nil {
 			return err

@@ -289,3 +289,16 @@ func TestAlertsSurviveReopen(t *testing.T) {
 		t.Errorf("alerts for another recipient = %+v", got)
 	}
 }
+
+func TestAddMedicationKeepsGivenStartTime(t *testing.T) {
+	s, _ := openTemp(t)
+	r, _ := seed(t, s)
+	since := time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)
+	m, err := s.AddMedication(care.Medication{RecipientID: r.ID, Name: "Thyroxine", Times: []care.ClockTime{morning}, CreatedAt: since})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !m.CreatedAt.Equal(since) {
+		t.Errorf("created at = %v, want %v", m.CreatedAt, since)
+	}
+}
