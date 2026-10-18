@@ -29,20 +29,23 @@
   :root[data-theme="dark"] { color-scheme: dark; }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text); font-size: 18px; line-height: 1.35; }
-  main { padding: 22px 26px 26px; max-width: 960px; margin: 0 auto; }
-  header { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
-  h1 { font-size: 30px; margin: 0; font-weight: 650; letter-spacing: -0.01em; }
+  main { padding: 0 26px 26px; max-width: 960px; margin: 0 auto; }
+  .top { position: sticky; top: 0; z-index: 1; background: var(--bg); padding: 18px 0 12px; transition: box-shadow 0.2s ease; }
+  html.scrolled .top { box-shadow: 0 12px 12px -12px rgba(0, 0, 0, 0.55); }
+  header { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
+  h1 { font-size: 28px; margin: 0; font-weight: 650; letter-spacing: -0.01em; }
   .sub { color: var(--muted); font-size: 18px; }
-  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
   .chip { padding: 6px 12px; border-radius: 999px; font-size: 16px; font-weight: 600; }
-  ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-  .dose { display: grid; grid-template-columns: 88px 1fr auto; align-items: center; gap: 16px; padding: 14px 16px; border-radius: var(--radius); background: var(--panel); border-left: 6px solid var(--line); }
-  .time { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
-  .name { font-size: 21px; font-weight: 600; }
-  .meta { color: var(--muted); font-size: 16px; }
+  ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .dose { display: grid; grid-template-columns: 76px 1fr auto; align-items: center; gap: 14px; padding: 10px 14px; border-radius: var(--radius); background: var(--panel); border-left: 6px solid var(--line); }
+  .time { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .name { font-size: 19px; font-weight: 600; }
+  .meta { color: var(--muted); font-size: 15px; }
   .right { display: flex; align-items: center; gap: 10px; }
   .pill { padding: 5px 12px; border-radius: 999px; font-size: 15px; font-weight: 700; text-transform: capitalize; }
-  button { font: inherit; font-size: 17px; font-weight: 650; padding: 10px 18px; border-radius: 12px; border: 0; cursor: pointer; background: var(--taken); color: var(--bg); min-height: 48px; }
+  button { font: inherit; font-size: 17px; font-weight: 650; padding: 8px 18px; border-radius: 12px; border: 0; cursor: pointer; background: var(--taken); color: var(--bg); min-height: 44px; }
+  button.confirm { background: var(--due); }
   button:disabled { opacity: 0.6; cursor: progress; }
   button:focus-visible { outline: 3px solid var(--upcoming); outline-offset: 2px; }
   .taken { border-left-color: var(--taken); } .taken .pill, .chip.taken { background: var(--taken-bg); color: var(--taken); }
@@ -50,7 +53,7 @@
   .missed { border-left-color: var(--missed); } .missed .pill, .chip.missed { background: var(--missed-bg); color: var(--missed); }
   .skipped { border-left-color: var(--skipped); } .skipped .pill, .chip.skipped { background: var(--skipped-bg); color: var(--skipped); }
   .upcoming { border-left-color: var(--upcoming); } .upcoming .pill, .chip.upcoming { background: var(--upcoming-bg); color: var(--upcoming); }
-  .score { display: flex; align-items: baseline; gap: 14px; margin-bottom: 18px; }
+  .score { display: flex; align-items: baseline; gap: 14px; margin: 6px 0 18px; }
   .score b { font-size: 64px; line-height: 1; font-weight: 750; font-variant-numeric: tabular-nums; }
   .bar { display: flex; height: 14px; border-radius: 7px; overflow: hidden; background: var(--line); margin-top: 8px; }
   .bar span { display: block; }
@@ -60,7 +63,14 @@
   h2 { font-size: 20px; margin: 22px 0 10px; }
   .note { padding: 12px 16px; border-radius: var(--radius); background: var(--panel); }
   .empty, .notice { color: var(--muted); padding: 18px 0; }
-  .toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 16px; }
+  html.more body::after {
+    content: "More below";
+    position: fixed; left: 0; right: 0; bottom: 0; height: 44px;
+    display: flex; align-items: flex-end; justify-content: center; padding-bottom: 6px;
+    font-size: 13px; color: var(--muted); pointer-events: none;
+    background: linear-gradient(transparent, var(--bg) 70%);
+  }
+  .toast { position: fixed; z-index: 2; left: 50%; bottom: 18px; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 16px; }
   @media (max-width: 560px) {
     .dose { grid-template-columns: 70px 1fr; }
     .right { grid-column: 1 / -1; justify-content: space-between; }
@@ -160,6 +170,18 @@ function shortDate(isoDate) {
   });
 }
 
+function clock(iso) {
+  return iso ? iso.slice(11, 16) : "";
+}
+
+function updateMore() {
+  const root = document.documentElement;
+  root.classList.toggle("more", window.scrollY + window.innerHeight < root.scrollHeight - 4);
+  root.classList.toggle("scrolled", window.scrollY > 0);
+}
+
+let shown = false;
+
 function render(result) {
   if (!result) return;
   if (result.isError) {
@@ -171,6 +193,12 @@ function render(result) {
   if (data && Array.isArray(data.doses)) renderSchedule(data);
   else if (data && data.moods) renderSummary(data);
   else notice("Nothing to show.");
+  if (!shown) {
+    shown = true;
+    const first = document.querySelector(".dose.due, .dose.missed");
+    if (first && first.getBoundingClientRect().bottom > window.innerHeight) first.scrollIntoView({ block: "center" });
+  }
+  updateMore();
 }
 
 function renderSchedule(data) {
@@ -183,9 +211,11 @@ function renderSchedule(data) {
     if (n) chips.append(el("span", "chip " + status, n + " " + status));
   }
 
+  const top = el("div", "top");
+  top.append(header, chips);
   const list = el("ul");
   for (const dose of data.doses) list.append(doseRow(data, dose));
-  app.replaceChildren(header, chips, data.doses.length ? list : el("p", "empty", "No doses scheduled."));
+  app.replaceChildren(top, data.doses.length ? list : el("p", "empty", "No doses scheduled."));
 }
 
 function doseRow(data, dose) {
@@ -194,23 +224,46 @@ function doseRow(data, dose) {
   info.append(el("div", "name", dose.medication + (dose.dosage ? " · " + dose.dosage : "")));
   const details = [];
   if (dose.instructions) details.push(dose.instructions);
+  if (dose.status === "taken" && dose.recorded_at) {
+    details.push((dose.family_alerted_at ? "Taken late at " : "Taken at ") + clock(dose.recorded_at));
+  }
+  if (dose.status === "skipped" && dose.recorded_at) details.push("Skipped at " + clock(dose.recorded_at));
   if (dose.note) details.push(dose.note);
-  if (dose.family_alerted_at) details.push("Family alerted at " + dose.family_alerted_at.slice(11, 16));
+  if (dose.family_alerted_at) details.push("Family alerted at " + clock(dose.family_alerted_at));
   if (details.length) info.append(el("div", "meta", details.join(" · ")));
 
   const right = el("div", "right");
   right.append(el("span", "pill", dose.status));
-  if (dose.status === "due" || dose.status === "missed") {
-    const button = el("button", "", "Mark taken");
-    button.setAttribute("aria-label", "Mark " + dose.medication + " at " + dose.time + " as taken");
-    button.addEventListener("click", () => markTaken(data, dose, button));
-    right.append(button);
-  }
+  if (dose.status === "due" || dose.status === "missed") right.append(markButton(data, dose));
   row.append(el("div", "time", dose.time), info, right);
   return row;
 }
 
-async function markTaken(data, dose, button) {
+function markButton(data, dose) {
+  const label = "Mark " + dose.medication + " at " + dose.time + " as taken";
+  const button = el("button", "", "Mark taken");
+  button.setAttribute("aria-label", label);
+  let timer = 0;
+  const reset = () => {
+    button.classList.remove("confirm");
+    button.textContent = "Mark taken";
+    button.setAttribute("aria-label", label);
+  };
+  button.addEventListener("click", () => {
+    if (!button.classList.contains("confirm")) {
+      button.classList.add("confirm");
+      button.textContent = "Tap to confirm";
+      button.setAttribute("aria-label", "Confirm: " + label);
+      timer = setTimeout(reset, 4000);
+      return;
+    }
+    clearTimeout(timer);
+    markTaken(data, dose, button, reset);
+  });
+  return button;
+}
+
+async function markTaken(data, dose, button, reset) {
   button.disabled = true;
   try {
     const logged = await request("tools/call", {
@@ -226,6 +279,7 @@ async function markTaken(data, dose, button) {
     toast(dose.medication + " marked as taken.");
   } catch (err) {
     button.disabled = false;
+    reset();
     toast(err.message);
   }
 }
@@ -233,6 +287,8 @@ async function markTaken(data, dose, button) {
 function renderSummary(data) {
   const header = el("header");
   header.append(el("h1", "", data.name), el("span", "sub", longDate(data.from) + " – " + longDate(data.to)));
+  const top = el("div", "top");
+  top.append(header);
 
   const score = el("div", "score");
   const counted = data.taken + data.skipped + data.missed;
@@ -270,7 +326,7 @@ function renderSummary(data) {
     notes.append(el("li", "note", shortDate(c.at) + " · " + c.mood + ": " + c.note));
   }
 
-  const parts = [header, score, meds];
+  const parts = [top, score, meds];
   if (data.check_ins.length) parts.push(el("h2", "", "Check-ins"), moods);
   if (notes.childElementCount) parts.push(notes);
   app.replaceChildren(...parts);
@@ -283,7 +339,10 @@ new ResizeObserver(() => {
   if (size === lastSize) return;
   lastSize = size;
   notify("ui/notifications/size-changed", { width: Math.ceil(rect.width), height: Math.ceil(rect.height) });
+  updateMore();
 }).observe(document.documentElement);
+window.addEventListener("scroll", updateMore, { passive: true });
+window.addEventListener("resize", updateMore);
 
 if (window.parent === window) {
   notice("Open this card from an MCP Apps host.");

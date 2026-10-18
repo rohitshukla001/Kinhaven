@@ -100,13 +100,30 @@
     position: absolute;
     inset: 0;
     display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 36%);
+    column-gap: 5%;
     align-content: center;
+    align-items: center;
     padding: 0 7%;
     transition: opacity 0.4s ease;
   }
+  .glance {
+    padding: 22px 24px;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: grid;
+    gap: 8px;
+  }
+  .glance[hidden] { display: none; }
+  .glance-label { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--screen-soft); }
+  .glance-count { font-family: var(--serif); font-size: clamp(26px, 2.8vw, 38px); line-height: 1.1; }
+  .glance-line { font-size: 17px; color: #e9dfd2; }
+  .glance-line.missed { color: #ff8a7a; }
+  .glance-line.due { color: var(--amber); }
   .clock { font-family: var(--serif); font-size: clamp(64px, 11vw, 148px); line-height: 0.95; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
   .greeting { font-family: var(--serif); font-size: clamp(22px, 2.6vw, 34px); color: #e9dfd2; margin-top: 10px; }
-  .try { margin-top: 34px; display: flex; flex-wrap: wrap; gap: 10px; }
+  .try { grid-column: 1 / -1; margin-top: 34px; display: flex; flex-wrap: wrap; gap: 10px; }
   .try button {
     font: inherit;
     font-size: 16px;
@@ -126,19 +143,19 @@
   }
   .screen.answering .idle { opacity: 0; pointer-events: none; }
   .screen.answering .stage { display: grid; }
-  .card-area { overflow: auto; padding: 0 18px; }
-  .card-area iframe { display: block; width: 100%; height: 420px; border: 0; border-radius: 16px; background: transparent; }
+  .card-area { overflow: hidden; padding: 0 18px; }
+  .card-area iframe { display: block; width: 100%; height: 100%; border: 0; border-radius: 16px; background: transparent; }
   .card-area.empty { display: grid; place-items: center; }
   .caption {
-    margin: 0 18px 22px;
-    padding: 12px 10px 0;
+    margin: 0 18px 16px;
+    padding: 10px 10px 0;
     font-family: var(--serif);
-    font-size: clamp(16px, 1.55vw, 21px);
+    font-size: clamp(15px, 1.3vw, 18px);
     line-height: 1.35;
     color: #e9dfd2;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     display: -webkit-box;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
@@ -183,9 +200,10 @@
   .mic:hover { background: var(--clay-deep); }
   .mic[aria-pressed="true"] { background: var(--sage); }
   .mic svg { width: 26px; height: 26px; }
-  form.ask { flex: 1; display: flex; gap: 10px; }
+  form.ask { flex: 1; min-width: 0; display: flex; gap: 10px; }
   form.ask input {
     flex: 1;
+    min-width: 0;
     font: inherit;
     font-size: 18px;
     padding: 0 20px;
@@ -208,14 +226,19 @@
     cursor: pointer;
   }
   .quiet { background: transparent; color: var(--ink); border-color: var(--line); }
+  .toggle { display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; flex: none; }
+  .switch { position: relative; width: 36px; height: 20px; border-radius: 999px; background: var(--line); transition: background 0.2s ease; }
+  .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--paper); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25); transition: transform 0.2s ease; }
+  .toggle[aria-checked="true"] .switch { background: var(--sage); }
+  .toggle[aria-checked="true"] .switch::after { transform: translateX(16px); }
   .hint { color: var(--ink-soft); font-size: 14px; margin-top: 10px; min-height: 20px; }
   aside {
     background: var(--paper);
     border: 1px solid var(--line);
     border-radius: 22px;
     padding: 22px 22px 18px;
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr) auto minmax(0, 1fr);
+    display: flex;
+    flex-direction: column;
     height: calc(100vh - 56px);
     position: sticky;
     top: 28px;
@@ -223,7 +246,7 @@
   }
   aside h2 { font-family: var(--serif); font-size: 20px; font-weight: 600; margin: 0 0 12px; display: flex; justify-content: space-between; align-items: baseline; }
   aside h2 small { font-family: var(--sans); font-size: 12px; font-weight: 500; color: var(--ink-soft); letter-spacing: 0.08em; text-transform: uppercase; }
-  .log { overflow: auto; margin: 0 -6px 18px; padding: 0 6px; display: grid; gap: 10px; align-content: start; }
+  .log { flex: 0 1 auto; min-height: 0; overflow: auto; margin: 0 -6px 18px; padding: 0 6px; display: grid; gap: 10px; align-content: start; }
   .msg { padding: 10px 14px; border-radius: 14px; font-size: 15px; line-height: 1.4; max-width: 92%; }
   .msg.you { background: var(--linen); justify-self: end; border-bottom-right-radius: 4px; }
   .msg.bot { background: #f1ebe2; border: 1px solid var(--line); border-bottom-left-radius: 4px; }
@@ -233,13 +256,17 @@
   .call.fail { border-left-color: var(--clay); }
   .call b { font-weight: 700; }
   .call .tag { font-family: var(--sans); font-size: 11px; margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: #efe1c8; color: #7a5420; }
-  .call pre { margin: 4px 0 0; white-space: pre-wrap; word-break: break-word; color: var(--ink-soft); }
+  .call pre { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink-soft); }
   .empty-note { color: var(--ink-soft); font-size: 14px; }
   :focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
   @media (max-width: 1100px) {
     .layout { grid-template-columns: 1fr; }
-    aside { position: static; height: auto; max-height: none; grid-template-rows: auto auto auto auto; }
+    aside { position: static; height: auto; max-height: none; }
     .log { max-height: 320px; }
+  }
+  @media (max-width: 900px) {
+    .idle { grid-template-columns: 1fr; }
+    .glance { display: none; }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before { animation: none !important; transition: none !important; }
@@ -258,8 +285,11 @@
       <div class="screen" id="screen">
         <div class="status"><span id="date"></span><span id="mode"></span></div>
         <div class="idle">
-          <div class="clock" id="clock">--:--</div>
-          <div class="greeting" id="greeting">Hello</div>
+          <div>
+            <div class="clock" id="clock">--:--</div>
+            <div class="greeting" id="greeting">Hello</div>
+          </div>
+          <section class="glance" id="glance" aria-label="Today" hidden></section>
           <div class="try" id="try"></div>
         </div>
         <div class="stage">
@@ -278,7 +308,7 @@
         <input id="text" autocomplete="off" maxlength="500" placeholder="Ask about Mom's medicines…" aria-label="Request">
         <button type="submit">Ask</button>
       </form>
-      <button class="quiet" id="voice" type="button" aria-pressed="true">Voice on</button>
+      <button class="quiet toggle" id="voice" type="button" role="switch" aria-checked="true">Spoken replies<span class="switch" aria-hidden="true"></span></button>
       <button class="quiet" id="home" type="button">Home</button>
     </div>
     <div class="hint" id="hint"></div>
@@ -318,10 +348,56 @@ function setMode(mode) {
 
 function tick() {
   const now = new Date();
-  $("clock").textContent = now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  $("clock").textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
   $("date").textContent = now.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" });
-  const h = now.getHours();
-  $("greeting").textContent = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+  $("greeting").textContent = greeting(now.getHours());
+}
+
+function greeting(hour) {
+  if (hour >= 5 && hour < 12) return "Good morning";
+  if (hour >= 12 && hour < 17) return "Good afternoon";
+  if (hour >= 17 && hour < 22) return "Good evening";
+  return "Hello";
+}
+
+function formatArgs(input) {
+  const entries = Object.entries(input || {});
+  if (!entries.length) return "no arguments";
+  return entries.map(([k, v]) => k + ": " + JSON.stringify(v)).join("\n");
+}
+
+async function refreshGlance() {
+  const glance = $("glance");
+  const args = {};
+  let result;
+  try {
+    result = await api("/api/tool", { name: "get_schedule", arguments: args });
+  } catch {
+    glance.hidden = true;
+    return;
+  }
+  addActivity("home", "get_schedule", args, result, false);
+  const data = result.structuredContent;
+  if (result.isError || !data || !Array.isArray(data.doses) || !data.doses.length) {
+    glance.hidden = true;
+    return;
+  }
+  const doses = data.doses;
+  const line = (cls, text) => el("div", "glance-line" + (cls ? " " + cls : ""), text);
+  const parts = [
+    el("div", "glance-label", "Today · " + data.name),
+    el("div", "glance-count", data.summary.taken + " of " + doses.length + " doses taken"),
+  ];
+  const named = (status) => doses.filter((d) => d.status === status).map((d) => d.medication + " at " + d.time);
+  const missed = named("missed");
+  const due = named("due");
+  const next = doses.find((d) => d.status === "upcoming");
+  if (missed.length) parts.push(line("missed", "Missed: " + missed.join(", ")));
+  if (due.length) parts.push(line("due", "Due now: " + due.join(", ")));
+  if (next) parts.push(line("", "Next: " + next.medication + " at " + next.time));
+  if (!missed.length && !due.length && !next) parts.push(line("", "All done for today"));
+  glance.replaceChildren(...parts);
+  glance.hidden = false;
 }
 
 function addMessage(who, text) {
@@ -338,7 +414,7 @@ function addActivity(source, name, input, result, viaCard) {
   const head = el("div");
   head.append(el("span", "", source + " → "), el("b", "", name));
   if (viaCard) head.append(el("span", "tag", "MCP App"));
-  item.append(head, el("pre", "", JSON.stringify(input || {})));
+  item.append(head, el("pre", "", formatArgs(input)));
   if (result && result.isError) item.append(el("pre", "", (result.content || [])[0]?.text || "error"));
   log.append(item);
   log.scrollTop = log.scrollHeight;
@@ -397,6 +473,12 @@ function speak(text) {
   speechSynthesis.speak(u);
 }
 
+function fitCard() {
+  const card = state.card;
+  if (!card || !card.height) return;
+  card.frame.style.height = Math.min(card.height, $("card").clientHeight) + "px";
+}
+
 function clearCard() {
   if (state.card) window.removeEventListener("message", state.card.listener);
   state.card = null;
@@ -447,7 +529,10 @@ async function mountCard(call) {
         post({ method: "ui/notifications/tool-result", params: call.result });
         return;
       case "ui/notifications/size-changed":
-        if (msg.params?.height) frame.style.height = Math.ceil(msg.params.height) + "px";
+        if (msg.params?.height && state.card) {
+          state.card.height = Math.ceil(msg.params.height);
+          fitCard();
+        }
         return;
       case "ping":
         post({ id: msg.id, result: {} });
@@ -456,6 +541,8 @@ async function mountCard(call) {
         try {
           const result = await api("/api/tool", msg.params);
           addActivity("card", msg.params.name, msg.params.arguments, result, true);
+          const speech = msg.params.name === call.tool && !result.isError && result.content?.[0]?.text;
+          if (speech) $("caption").textContent = speech;
           post({ id: msg.id, result });
         } catch (err) {
           post({ id: msg.id, error: { code: -32000, message: err.message } });
@@ -467,7 +554,7 @@ async function mountCard(call) {
     }
   };
   window.addEventListener("message", listener);
-  state.card = { listener };
+  state.card = { listener, frame, height: 0 };
   const area = $("card");
   area.classList.remove("empty");
   area.append(frame);
@@ -478,6 +565,7 @@ function goHome() {
   clearCard();
   screen.classList.remove("answering");
   setMode("");
+  refreshGlance();
 }
 
 function setupVoiceInput() {
@@ -524,10 +612,10 @@ $("ask").addEventListener("submit", (e) => {
 });
 $("voice").addEventListener("click", (e) => {
   state.voice = !state.voice;
-  e.currentTarget.textContent = state.voice ? "Voice on" : "Voice off";
-  e.currentTarget.setAttribute("aria-pressed", String(state.voice));
+  e.currentTarget.setAttribute("aria-checked", String(state.voice));
   if (!state.voice) window.speechSynthesis?.cancel();
 });
+window.addEventListener("resize", fitCard);
 $("home").addEventListener("click", goHome);
 if (!("speechSynthesis" in window)) $("voice").hidden = true;
 
@@ -536,6 +624,7 @@ api("/api/info").then((info) => {
 }).catch(() => {});
 
 setupVoiceInput();
+refreshGlance();
 tick();
 setInterval(tick, 15000);
 </script>

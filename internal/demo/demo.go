@@ -71,7 +71,7 @@ func medications(recipientID string, since time.Time) []care.Medication {
 		med("Thyroxine", "50 mcg", "Take on an empty stomach", nil, care.ClockTime{Hour: 7}),
 		med("Metformin", "500 mg", "Take with food", nil, care.ClockTime{Hour: 8}, care.ClockTime{Hour: 20}),
 		med("Amlodipine", "5 mg", "", nil, care.ClockTime{Hour: 9}),
-		med("Vitamin D3", "60000 IU", "Take with milk", []time.Weekday{time.Sunday}, care.ClockTime{Hour: 10}),
+		med("Vitamin D3", "60,000 IU", "Take with milk", []time.Weekday{time.Sunday}, care.ClockTime{Hour: 10}),
 		med("Atorvastatin", "10 mg", "Take at bedtime", nil, care.ClockTime{Hour: 21}),
 	}
 }

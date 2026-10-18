@@ -170,9 +170,19 @@ through an agent.
 4. Press the microphone button and speak, type a request, or select a
    suggestion such as "Has Mom taken her tablets?".
 
-The screen shows the MCP App card for the schedule and the weekly summary.
-Select **Mark taken** on the card to record a dose. The **MCP activity** panel
-shows each tool call from the agent and from the card.
+The home screen shows today's doses for the person: how many are taken, and
+which doses are missed, due or next. The simulator reads this with the
+`get_schedule` tool.
+
+The screen shows the MCP App card for the schedule and the weekly summary. To
+record a dose from the card:
+
+1. Select **Mark taken**.
+2. Select **Tap to confirm** within 4 seconds.
+
+The **MCP activity** panel shows each tool call from the home screen, the agent
+and the card. To stop the spoken replies, set the **Spoken replies** switch to
+off.
 
 For a text-only session, run `make sim-console`.
 
