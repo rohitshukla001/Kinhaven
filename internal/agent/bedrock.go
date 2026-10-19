@@ -23,7 +23,7 @@ type Bedrock struct {
 }
 
 func NewBedrock(ctx context.Context, modelID string) (*Bedrock, error) {
-	cfg, err := config.LoadDefaultConfig(ctx)
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithRetryMaxAttempts(6))
 	if err != nil {
 		return nil, err
 	}
