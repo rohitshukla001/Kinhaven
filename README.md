@@ -136,7 +136,7 @@ Start the server, then connect any MCP client to `http://127.0.0.1:8080/mcp`.
 | `add_contact` | Adds a family member who gets missed-dose alerts. |
 | `add_medication` | Adds a medicine with daily dose times and, for weekly medicines, the days. |
 | `stop_medication` | Removes a medicine from the schedule. |
-| `log_dose` | Records a dose as taken or skipped. Without `scheduled_at`, it uses today's unrecorded dose that is closest to now. |
+| `log_dose` | Records a dose as taken or skipped. Without `scheduled_at`, it uses today's unrecorded dose that is closest to now. A dose that is more than `KINHAVEN_MISSED_DOSE_GRACE` in the future needs `scheduled_at`. |
 | `record_checkin` | Records how the person feels today: `good`, `okay` or `poor`, with a note. |
 
 The `recipient_id` argument is optional when only one person is in care.

@@ -122,7 +122,7 @@ func (t *tools) stopMedication(_ context.Context, _ *mcp.CallToolRequest, in sto
 type logDoseInput struct {
 	MedicationID string `json:"medication_id" jsonschema:"ID from get_schedule or list_medications."`
 	Status       string `json:"status" jsonschema:"taken or skipped."`
-	ScheduledAt  string `json:"scheduled_at,omitempty" jsonschema:"scheduled_at value from get_schedule. Leave it out to use today's unrecorded dose closest to now."`
+	ScheduledAt  string `json:"scheduled_at,omitempty" jsonschema:"scheduled_at value from get_schedule. Leave it out to use today's unrecorded dose closest to now. A dose more than the grace period in the future needs scheduled_at; pass it only after the user confirms the dose was taken early."`
 	Note         string `json:"note,omitempty" jsonschema:"Optional note, for example the reason a dose was skipped."`
 }
 
@@ -193,16 +193,25 @@ func (t *tools) findSlot(m care.Medication, loc *time.Location, scheduledAt stri
 	}
 
 	start, end := care.DayBounds(now, loc)
-	var best time.Time
+	var best, next time.Time
 	for _, s := range sched.Slots(meds, t.store.Doses(m.RecipientID, start, end), start, end, now) {
-		if s.Dose == nil && (best.IsZero() || distance(s.At, now) < distance(best, now)) {
+		switch {
+		case s.Dose != nil:
+		case s.At.After(now.Add(t.cfg.Grace)):
+			if next.IsZero() {
+				next = s.At
+			}
+		case best.IsZero() || distance(s.At, now) < distance(best, now):
 			best = s.At
 		}
 	}
-	if best.IsZero() {
-		return time.Time{}, fmt.Errorf("every %s dose for today is already recorded; pass scheduled_at to change one", m.Name)
+	switch {
+	case !best.IsZero():
+		return best, nil
+	case !next.IsZero():
+		return time.Time{}, fmt.Errorf("no %s dose is due now; the next one is at %s. Pass scheduled_at to log it early", m.Name, next.In(loc).Format("15:04"))
 	}
-	return best, nil
+	return time.Time{}, fmt.Errorf("every %s dose for today is already recorded; pass scheduled_at to change one", m.Name)
 }
 
 func distance(a, b time.Time) time.Duration {

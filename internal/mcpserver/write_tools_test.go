@@ -137,7 +137,16 @@ func TestLogDose(t *testing.T) {
 		}
 	}
 
-	call[logDoseOutput](t, cs, "log_dose", map[string]any{"medication_id": m.ID, "status": "taken"})
+	_, res = call[logDoseOutput](t, cs, "log_dose", map[string]any{"medication_id": m.ID, "status": "taken"})
+	if !strings.Contains(errorText(res), "no Metformin dose is due now; the next one is at 20:30") {
+		t.Errorf("future dose: %q", errorText(res))
+	}
+
+	f.now = f.day.Add(19*time.Hour + 45*time.Minute)
+	got, res = call[logDoseOutput](t, cs, "log_dose", map[string]any{"medication_id": m.ID, "status": "taken"})
+	if res.IsError || got.ScheduledAt != at(20, 30) {
+		t.Errorf("dose within the early window: %+v %q", got, errorText(res))
+	}
 	_, res = call[logDoseOutput](t, cs, "log_dose", map[string]any{"medication_id": m.ID, "status": "taken"})
 	if !strings.Contains(errorText(res), "already recorded") {
 		t.Errorf("all recorded: %q", errorText(res))

@@ -244,8 +244,8 @@
     top: 28px;
     box-shadow: 0 24px 50px -36px rgba(60, 35, 15, 0.5);
   }
-  aside h2 { font-family: var(--serif); font-size: 20px; font-weight: 600; margin: 0 0 12px; display: flex; justify-content: space-between; align-items: baseline; }
-  aside h2 small { font-family: var(--sans); font-size: 12px; font-weight: 500; color: var(--ink-soft); letter-spacing: 0.08em; text-transform: uppercase; }
+  aside h2 { font-family: var(--serif); font-size: 20px; font-weight: 600; margin: 0 0 12px; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  aside h2 small { font-family: var(--sans); font-size: 12px; font-weight: 500; color: var(--ink-soft); letter-spacing: 0.08em; text-transform: uppercase; text-align: right; }
   .log { flex: 0 1 auto; min-height: 0; overflow: auto; margin: 0 -6px 18px; padding: 0 6px; display: grid; gap: 10px; align-content: start; }
   .msg { padding: 10px 14px; border-radius: 14px; font-size: 15px; line-height: 1.4; max-width: 92%; }
   .msg.you { background: var(--linen); justify-self: end; border-bottom-right-radius: 4px; }
@@ -360,6 +360,12 @@ function greeting(hour) {
   return "Hello";
 }
 
+function modelLabel(id) {
+  if (id === "mock") return "mock";
+  const name = id.split(".").pop().replace(/-\d{8}.*$/, "").replace(/:.*$/, "");
+  return "Bedrock · " + name;
+}
+
 function formatArgs(input) {
   const entries = Object.entries(input || {});
   if (!entries.length) return "no arguments";
@@ -444,7 +450,7 @@ async function ask(text) {
     const turn = await api("/api/ask", { session_id: state.sessionId, text });
     state.sessionId = turn.session_id;
     for (const c of turn.calls) addActivity("assistant", c.tool, c.input, c.result, Boolean(c.resource_uri));
-    const shown = turn.calls.filter((c) => c.resource_uri && c.result && !c.result.isError).pop();
+    const shown = await freshCard(turn.calls);
     if (shown) await mountCard(shown);
     else clearCard();
     $("caption").textContent = turn.reply;
@@ -458,6 +464,16 @@ async function ask(text) {
   } finally {
     state.busy = false;
   }
+}
+
+async function freshCard(calls) {
+  const i = calls.findLastIndex((c) => c.resource_uri && c.result && !c.result.isError);
+  if (i < 0) return null;
+  const card = calls[i];
+  if (!calls.slice(i + 1).some((c) => c.result && !c.result.isError)) return card;
+  const result = await api("/api/tool", { name: card.tool, arguments: card.input || {} });
+  addActivity("host", card.tool, card.input, result, true);
+  return result.isError ? card : { ...card, result };
 }
 
 function speak(text) {
@@ -620,7 +636,8 @@ $("home").addEventListener("click", goHome);
 if (!("speechSynthesis" in window)) $("voice").hidden = true;
 
 api("/api/info").then((info) => {
-  $("model").textContent = info.model + " · " + info.tools + " tools";
+  $("model").textContent = modelLabel(info.model) + " · " + info.tools + " tools";
+  $("model").title = info.model;
 }).catch(() => {});
 
 setupVoiceInput();

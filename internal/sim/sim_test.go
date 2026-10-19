@@ -37,7 +37,8 @@ func newFixture(t *testing.T) *fixture {
 	if err != nil {
 		t.Fatal(err)
 	}
-	med, err := st.AddMedication(care.Medication{RecipientID: r.ID, Name: "Metformin", Times: []care.ClockTime{{Hour: 23, Minute: 59}}})
+	today, _ := care.DayBounds(time.Now(), time.UTC)
+	med, err := st.AddMedication(care.Medication{RecipientID: r.ID, Name: "Metformin", Times: []care.ClockTime{{Hour: 23, Minute: 59}}, CreatedAt: today})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -183,7 +184,9 @@ func TestCardHostEndpoints(t *testing.T) {
 		t.Fatalf("card: status %d mime %v", resp.StatusCode, card["mimeType"])
 	}
 
-	_, logged := f.post(t, "/api/tool", map[string]any{"name": "log_dose", "arguments": map[string]any{"medication_id": f.med.ID, "status": "taken"}})
+	today, _ := care.DayBounds(time.Now(), time.UTC)
+	slot := today.Add(23*time.Hour + 59*time.Minute).Format(time.RFC3339)
+	_, logged := f.post(t, "/api/tool", map[string]any{"name": "log_dose", "arguments": map[string]any{"medication_id": f.med.ID, "status": "taken", "scheduled_at": slot}})
 	if logged["isError"] == true || logged["structuredContent"].(map[string]any)["status"] != "taken" {
 		t.Errorf("log_dose via card = %v", logged)
 	}
